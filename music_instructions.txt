@@ -1,0 +1,7 @@
+# How to add background music to Space Typer
+
+1. Download a space-themed MP3 file (from Pixabay or another free source)
+2. Rename it to 'space_theme.mp3'
+3. Place it in the same directory as your space_typer.html file
+
+The game will automatically use this file for background music.
