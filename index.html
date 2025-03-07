@@ -85,34 +85,51 @@
         /* Mobile-specific styles */
         #virtual-keyboard {
             position: absolute;
-            bottom: 0;
+            bottom: 10px;
             left: 0;
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 15px 0;
             display: none; /* Hidden by default, shown on mobile */
             flex-wrap: wrap;
             justify-content: center;
             z-index: 5;
+            border-top: 2px solid rgba(76, 175, 80, 0.7);
+        }
+        
+        .key-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 8px;
         }
         
         .key {
-            width: 9%;
-            height: 40px;
-            margin: 0.2%;
-            background-color: #333;
-            color: white;
+            width: 8.5%;
+            height: 45px;
+            margin: 0 1%;
+            background-color: rgba(40, 40, 40, 0.8);
+            color: #4CAF50;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 5px;
-            font-size: 18px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
             cursor: pointer;
             user-select: none;
+            text-shadow: 0 0 5px rgba(76, 175, 80, 0.7);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5), inset 0 0 2px rgba(76, 175, 80, 0.5);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            transition: all 0.1s ease;
         }
         
-        .key:active {
-            background-color: #4CAF50;
+        .key:active, .key.active {
+            background-color: rgba(76, 175, 80, 0.7);
+            color: white;
+            transform: scale(0.95);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
         }
         
         #mobile-input {
@@ -123,11 +140,11 @@
         
         @media (max-width: 768px) {
             #virtual-keyboard {
-                display: flex;
+                display: block;
             }
             
             canvas {
-                height: 80vh; /* Make room for virtual keyboard */
+                height: 75vh; /* Make room for virtual keyboard */
             }
             
             #hud {
@@ -1130,17 +1147,18 @@
         }
 
         function setupMobileSupport() {
-            // Check if we're on a mobile device
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            // Check if we're on a mobile device or small screen
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                          || window.innerWidth <= 768;
             
             if (isMobile) {
                 // Create virtual keyboard
                 createVirtualKeyboard();
                 
-                // Setup mobile input field for triggering the keyboard
+                // Setup mobile input field for triggering the native keyboard
                 const mobileInput = document.getElementById('mobile-input');
                 
-                // Handle mobile input
+                // Handle mobile input from native keyboard
                 mobileInput.addEventListener('input', function(e) {
                     if (e.target.value) {
                         // Process the last character typed
@@ -1154,10 +1172,48 @@
                     }
                 });
                 
-                // Show keyboard when canvas is tapped
+                // Show native keyboard when canvas is tapped (optional)
                 canvas.addEventListener('touchstart', function(e) {
                     if (gameActive) {
-                        mobileInput.focus();
+                        // Uncomment the next line if you want the native keyboard to appear on canvas tap
+                        // mobileInput.focus();
+                    }
+                });
+                
+                // Add a toggle button for the keyboard
+                const keyboardToggle = document.createElement('div');
+                keyboardToggle.id = 'keyboard-toggle';
+                keyboardToggle.textContent = '⌨️';
+                keyboardToggle.style.position = 'absolute';
+                keyboardToggle.style.bottom = '10px';
+                keyboardToggle.style.right = '10px';
+                keyboardToggle.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                keyboardToggle.style.color = '#4CAF50';
+                keyboardToggle.style.padding = '10px';
+                keyboardToggle.style.borderRadius = '5px';
+                keyboardToggle.style.fontSize = '24px';
+                keyboardToggle.style.cursor = 'pointer';
+                keyboardToggle.style.zIndex = '10';
+                keyboardToggle.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                keyboardToggle.style.boxShadow = '0 0 5px rgba(76, 175, 80, 0.5)';
+                
+                document.getElementById('game-container').appendChild(keyboardToggle);
+                
+                // Toggle keyboard visibility
+                let keyboardVisible = true;
+                const virtualKeyboard = document.getElementById('virtual-keyboard');
+                
+                keyboardToggle.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    keyboardVisible = !keyboardVisible;
+                    virtualKeyboard.style.display = keyboardVisible ? 'block' : 'none';
+                    keyboardToggle.textContent = keyboardVisible ? '⌨️' : '🔼';
+                    
+                    // Adjust canvas height
+                    if (keyboardVisible) {
+                        canvas.style.height = '75vh';
+                    } else {
+                        canvas.style.height = '90vh';
                     }
                 });
             }
@@ -1165,28 +1221,55 @@
 
         function createVirtualKeyboard() {
             const keyboard = document.getElementById('virtual-keyboard');
-            const keys = 'qwertyuiopasdfghjklzxcvbnm';
+            // Clear any existing content
+            keyboard.innerHTML = '';
             
-            // Create keys
-            for (let i = 0; i < keys.length; i++) {
-                const key = document.createElement('div');
-                key.className = 'key';
-                key.textContent = keys[i];
+            // Define keyboard rows in QWERTY layout
+            const keyboardRows = [
+                'qwertyuiop',
+                'asdfghjkl',
+                'zxcvbnm'
+            ];
+            
+            // Create each row
+            keyboardRows.forEach(rowKeys => {
+                const rowElement = document.createElement('div');
+                rowElement.className = 'key-row';
                 
-                // Add touch event
-                key.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    processKey(keys[i]);
+                // Create keys for this row
+                for (let i = 0; i < rowKeys.length; i++) {
+                    const key = document.createElement('div');
+                    key.className = 'key';
+                    key.textContent = rowKeys[i];
                     
-                    // Visual feedback
-                    this.style.backgroundColor = '#4CAF50';
-                    setTimeout(() => {
-                        this.style.backgroundColor = '#333';
-                    }, 100);
-                });
+                    // Add touch event
+                    key.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        processKey(rowKeys[i]);
+                        
+                        // Visual feedback
+                        this.classList.add('active');
+                        setTimeout(() => {
+                            this.classList.remove('active');
+                        }, 150);
+                    });
+                    
+                    rowElement.appendChild(key);
+                }
                 
-                keyboard.appendChild(key);
-            }
+                keyboard.appendChild(rowElement);
+            });
+            
+            // Add a retro keyboard label
+            const keyboardLabel = document.createElement('div');
+            keyboardLabel.style.color = 'rgba(76, 175, 80, 0.7)';
+            keyboardLabel.style.textAlign = 'center';
+            keyboardLabel.style.fontSize = '12px';
+            keyboardLabel.style.fontFamily = 'Courier New, monospace';
+            keyboardLabel.style.marginTop = '5px';
+            keyboardLabel.style.textShadow = '0 0 5px rgba(76, 175, 80, 0.5)';
+            keyboardLabel.textContent = '[ SPACE COMMAND TERMINAL ]';
+            keyboard.appendChild(keyboardLabel);
         }
     </script>
 </body>
