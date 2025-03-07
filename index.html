@@ -771,14 +771,23 @@
                 // Restore context before drawing text
                 ctx.restore();
                 
-                // Draw word
-                ctx.font = `bold ${Math.min(20, 14 + ship.word.length)}px Courier New`;
+                // Draw word with adaptive font sizing based on asteroid size and word length
+                // Calculate appropriate font size based on asteroid width and word length
+                const maxFontSize = 24;
+                const minFontSize = 16;
+                
+                // Calculate font size based on asteroid size and word length
+                // Longer words need smaller fonts to fit inside the asteroid
+                const fontSizeByWidth = Math.max(minFontSize, Math.min(maxFontSize, ship.width / (ship.word.length * 0.7)));
+                
+                // Set font with calculated size
+                ctx.font = `bold ${Math.floor(fontSizeByWidth)}px Courier New`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 
-                // Add text shadow for better readability
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-                ctx.shadowBlur = 4;
+                // Add stronger text shadow for better readability against the asteroid texture
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                ctx.shadowBlur = 6;
                 ctx.shadowOffsetX = 1;
                 ctx.shadowOffsetY = 1;
                 
@@ -787,31 +796,61 @@
                     const typedPart = ship.word.substring(0, currentTypingWord.length);
                     const remainingPart = ship.word.substring(currentTypingWord.length);
                     
-                    // Measure width of typed part
+                    // Measure width of typed part and full word
                     const typedWidth = ctx.measureText(typedPart).width;
                     const fullWidth = ctx.measureText(ship.word).width;
                     
-                    // Draw typed part in green
-                    ctx.fillStyle = '#4CAF50';
-                    ctx.fillText(
-                        typedPart,
-                        ship.x - (fullWidth - typedWidth) / 2,
-                        ship.y
-                    );
+                    // Calculate positions to ensure perfect centering
+                    const textStartX = ship.x - fullWidth / 2;
                     
-                    // Draw remaining part in white
+                    // Draw the text in two parts
+                    // First, draw the typed part in green
+                    ctx.fillStyle = '#4CAF50';
+                    
+                    // Save the current context to restore after drawing the first part
+                    ctx.save();
+                    
+                    // Set a clip region for the first part of the text
+                    ctx.beginPath();
+                    ctx.rect(ship.x - fullWidth/2, ship.y - fontSizeByWidth, 
+                             typedWidth, fontSizeByWidth * 2);
+                    ctx.clip();
+                    
+                    // Draw the full word - the clipping will only show the first part
+                    ctx.fillText(ship.word, ship.x, ship.y);
+                    
+                    // Restore context for the second part
+                    ctx.restore();
+                    
+                    // Now draw the remaining part in white
                     ctx.fillStyle = 'white';
-                    ctx.fillText(
-                        remainingPart,
-                        ship.x + typedWidth / 2,
-                        ship.y
-                    );
+                    
+                    // Save context again
+                    ctx.save();
+                    
+                    // Set a clip region for the second part of the text
+                    ctx.beginPath();
+                    ctx.rect(ship.x - fullWidth/2 + typedWidth, ship.y - fontSizeByWidth,
+                             fullWidth - typedWidth, fontSizeByWidth * 2);
+                    ctx.clip();
+                    
+                    // Draw the full word again - the clipping will only show the second part
+                    ctx.fillText(ship.word, ship.x, ship.y);
+                    
+                    // Restore context
+                    ctx.restore();
                 } else {
+                    // Draw full word in white
                     ctx.fillStyle = 'white';
+                    ctx.fillText(ship.word, ship.x, ship.y);
+                    
+                    // Add subtle glow effect for better visibility
+                    ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
+                    ctx.shadowBlur = 8;
                     ctx.fillText(ship.word, ship.x, ship.y);
                 }
                 
-                // Reset shadow
+                // Reset shadow effects
                 ctx.shadowColor = 'transparent';
                 ctx.shadowBlur = 0;
                 ctx.shadowOffsetX = 0;
@@ -953,19 +992,20 @@
                 usedFirstLetters.add(word[0].toLowerCase());
                 
                 // Create asteroid size based on word length
-                // Minimum size for very short words, scaling up for longer words
-                const minSize = 25;
-                const maxSize = 60;
+                // Larger minimum size to ensure text fits comfortably
+                const minSize = 40;  // Increased from 25
+                const maxSize = 90;  // Increased from 60
                 
-                // Calculate size based on word length
-                // Short words (2-3 chars): small asteroids
-                // Medium words (4-6 chars): medium asteroids
+                // Calculate size based on word length with a steeper scaling factor
+                // Short words (2-3 chars): medium-small asteroids
+                // Medium words (4-6 chars): medium-large asteroids
                 // Long words (7+ chars): large asteroids
-                const sizeBase = minSize + (word.length * 5);
+                const sizeBase = minSize + (word.length * 7);  // Increased multiplier from 5 to 7
                 const size = Math.min(maxSize, sizeBase);
                 
-                // Add some randomness to make asteroids more varied
-                const randomFactor = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1
+                // Add some randomness to make asteroids more varied, but less than before
+                // to ensure consistent text fitting
+                const randomFactor = 0.95 + (Math.random() * 0.1); // 0.95 to 1.05 (narrower range)
                 const finalSize = size * randomFactor;
                 
                 // Make width and height slightly different for more natural look
