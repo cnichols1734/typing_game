@@ -165,6 +165,84 @@
                 font-size: 18px;
             }
         }
+        
+        #hud {
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(0, 20, 0, 0.7);
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+            padding: 10px 15px;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px rgba(76, 175, 80, 0.7);
+            z-index: 5;
+        }
+        
+        #hud div {
+            margin: 5px 0;
+            position: relative;
+            padding-left: 10px;
+        }
+        
+        #hud div:before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            animation: blink 1.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        #score {
+            color: #FFEB3B;
+        }
+        
+        #lives {
+            color: #FF5252;
+        }
+        
+        #round {
+            color: #2196F3;
+        }
+        
+        .life-icon {
+            color: #FF5252;
+            text-shadow: 0 0 8px #FF0000;
+            font-size: 16px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { text-shadow: 0 0 8px #FF0000; }
+            50% { text-shadow: 0 0 15px #FF0000; }
+            100% { text-shadow: 0 0 8px #FF0000; }
+        }
+        
+        /* Enhanced round transition */
+        .round-transition {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            color: #4CAF50;
+            font-weight: bold;
+            z-index: 100;
+            text-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+            animation: roundAppear 2.5s ease-in-out;
+        }
+        
+        @keyframes roundAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
     </style>
 </head>
 <body>
@@ -335,31 +413,81 @@
         
         // Word lists by difficulty
         const SHORT_WORDS = [
-            'at', 'an', 'as', 'am', 'by', 'do', 'go', 'he', 'hi', 'if', 'in', 'is', 'it', 'me', 'my', 'no', 'of', 'on', 
-            'or', 'so', 'to', 'up', 'us', 'we'
+            // Keep a few essential 2-letter words
+            'at', 'in', 'it', 'to', 'up', 'we',
+            // Add 3-letter words
+            'ace', 'act', 'add', 'age', 'ago', 'aid', 'aim', 'air', 'all', 'and', 'any', 'arm', 'art', 'ask', 'bad',
+            'bag', 'bar', 'bat', 'bay', 'bed', 'bee', 'beg', 'bet', 'big', 'bit', 'box', 'boy', 'bug', 'bus', 'but',
+            'buy', 'cab', 'can', 'cap', 'car', 'cat', 'cow', 'cry', 'cup', 'cut', 'dad', 'day', 'den', 'did', 'die',
+            'dig', 'dim', 'dip', 'dog', 'dot', 'dry', 'due', 'dug', 'ear', 'eat', 'egg', 'end', 'eye', 'fan', 'far',
+            'fat', 'few', 'fig', 'fit', 'fix', 'fly', 'fog', 'for', 'fox', 'fun', 'fur', 'gap', 'gas', 'get', 'got',
+            'gun', 'guy', 'gym', 'had', 'ham', 'has', 'hat', 'her', 'hid', 'him', 'hip', 'hit', 'hot', 'how', 'hub',
+            'hug', 'hut', 'ice', 'ink', 'jar', 'jaw', 'jet', 'job', 'jog', 'joy', 'key', 'kid', 'kit', 'lab', 'lag',
+            'lap', 'law', 'lay', 'led', 'leg', 'let', 'lid', 'lie', 'lip', 'lit', 'log', 'lot', 'low', 'mad', 'man',
+            'map', 'mat', 'may', 'men', 'met', 'mix', 'mob', 'mom', 'mop', 'mud', 'mug', 'nap', 'net', 'new', 'nod',
+            'not', 'now', 'nut', 'odd', 'off', 'oil', 'old', 'one', 'our', 'out', 'owe', 'own', 'pad', 'pan', 'pat',
+            'pay', 'pen', 'pet', 'pie', 'pig', 'pin', 'pit', 'pop', 'pot', 'put', 'rad', 'rag', 'ran', 'rap', 'rat',
+            'raw', 'red', 'rib', 'rid', 'rim', 'rip', 'rob', 'rod', 'rot', 'row', 'rub', 'rug', 'run', 'sad', 'sat',
+            'saw', 'say', 'sea', 'see', 'set', 'sew', 'she', 'shy', 'sip', 'sir', 'sit', 'six', 'ski', 'sky', 'sly',
+            'son', 'spy', 'sum', 'sun', 'tab', 'tag', 'tan', 'tap', 'tar', 'tax', 'tea', 'ten', 'the', 'tie', 'tin',
+            'tip', 'toe', 'top', 'toy', 'try', 'tub', 'two', 'use', 'van', 'vat', 'vet', 'via', 'war', 'was', 'wax',
+            'way', 'web', 'wet', 'who', 'why', 'win', 'wit', 'won', 'wow', 'yes', 'yet', 'you', 'zip', 'zoo'
         ];
         
         const MEDIUM_WORDS = [
-            'and', 'are', 'but', 'can', 'did', 'for', 'get', 'had', 'has', 'her', 'him', 'his', 'how', 'its', 'let', 
-            'may', 'new', 'not', 'now', 'off', 'old', 'one', 'our', 'out', 'put', 'say', 'see', 'she', 'the', 'too', 
-            'try', 'use', 'was', 'way', 'who', 'why', 'yes', 'you', 'able', 'also', 'away', 'back', 'been', 'both', 
-            'call', 'came', 'come', 'does', 'down', 'each', 'even', 'find', 'from', 'give', 'good', 'have', 'here', 
-            'into', 'just', 'know', 'like', 'look', 'made', 'make', 'many', 'more', 'most', 'much', 'must', 'only', 
-            'over', 'said', 'same', 'some', 'such', 'take', 'than', 'that', 'them', 'then', 'they', 'this', 'time', 
-            'very', 'well', 'went', 'were', 'what', 'when', 'will', 'with', 'your'
+            // Only 4-5 letter words
+            'able', 'acid', 'aged', 'also', 'area', 'army', 'away', 'baby', 'back', 'ball', 'band', 'bank', 'base',
+            'bath', 'bear', 'beat', 'been', 'beer', 'bell', 'belt', 'best', 'bird', 'blow', 'blue', 'boat', 'body',
+            'bomb', 'bond', 'bone', 'book', 'boom', 'born', 'boss', 'both', 'bowl', 'bulk', 'burn', 'bush', 'busy',
+            'call', 'calm', 'came', 'camp', 'card', 'care', 'case', 'cash', 'cast', 'cell', 'chat', 'chip', 'city',
+            'club', 'coal', 'coat', 'code', 'cold', 'come', 'cook', 'cool', 'cope', 'copy', 'core', 'cost', 'crew',
+            'crop', 'dark', 'data', 'date', 'dawn', 'days', 'dead', 'deal', 'dean', 'dear', 'debt', 'deep', 'deny',
+            'desk', 'dial', 'diet', 'dirt', 'dish', 'disk', 'does', 'done', 'door', 'dose', 'down', 'draw', 'drew',
+            'drop', 'drug', 'dual', 'duke', 'dust', 'duty', 'each', 'earn', 'ease', 'east', 'easy', 'edge', 'else',
+            'even', 'ever', 'evil', 'exit', 'face', 'fact', 'fade', 'fail', 'fair', 'fall', 'farm', 'fast', 'fate',
+            'fear', 'feed', 'feel', 'feet', 'fell', 'felt', 'file', 'fill', 'film', 'find', 'fine', 'fire', 'firm',
+            'fish', 'five', 'flat', 'flow', 'food', 'foot', 'ford', 'form', 'fort', 'four', 'free', 'from', 'fuel',
+            'full', 'fund', 'gain', 'game', 'gate', 'gave', 'gear', 'gene', 'gift', 'girl', 'give', 'glad', 'goal',
+            'goes', 'gold', 'golf', 'gone', 'good', 'gray', 'grew', 'grey', 'grow', 'gulf', 'hair', 'half', 'hall',
+            'hand', 'hang', 'hard', 'harm', 'hate', 'have', 'head', 'hear', 'heat', 'held', 'hell', 'help', 'here',
+            'hero', 'high', 'hill', 'hire', 'hold', 'hole', 'holy', 'home', 'hope', 'host', 'hour', 'huge', 'hung',
+            'hunt', 'hurt', 'idea', 'inch', 'into', 'iron', 'item', 'jack', 'jane', 'jean', 'john', 'join', 'jump',
+            'jury', 'just', 'keen', 'keep', 'kent', 'kept', 'kick', 'kill', 'kind', 'king', 'knee', 'knew', 'know',
+            'lack', 'lady', 'laid', 'lake', 'land', 'lane', 'last', 'late', 'lead', 'left', 'less', 'life', 'lift',
+            'like', 'line', 'link', 'list', 'live', 'load', 'loan', 'lock', 'logo', 'long', 'look', 'lord', 'lose',
+            'loss', 'lost', 'love', 'luck', 'made', 'mail', 'main', 'make', 'male', 'many', 'mark', 'mass', 'matt',
+            'meal', 'mean', 'meat', 'meet', 'menu', 'mere', 'mike', 'mile', 'milk', 'mill', 'mind', 'mine', 'miss',
+            'mode', 'mood', 'moon', 'more', 'most', 'move', 'much', 'must', 'name', 'navy', 'near', 'neck', 'need',
+            'news', 'next', 'nice', 'nick', 'nine', 'none', 'nose', 'note', 'okay', 'once', 'only', 'onto', 'open',
+            'oral', 'over', 'pace', 'pack', 'page', 'paid', 'pain', 'pair', 'palm', 'park', 'part', 'pass', 'past',
+            'path', 'peak', 'pick', 'pink', 'pipe', 'plan', 'play', 'plot', 'plug', 'plus', 'poll', 'pool', 'poor',
+            'port', 'post', 'pull', 'pure', 'push', 'race', 'rail', 'rain', 'rank', 'rare', 'rate', 'read', 'real',
+            'rear', 'rely', 'rent', 'rest', 'rice', 'rich', 'ride', 'ring', 'rise', 'risk', 'road', 'rock', 'role',
+            'roll', 'roof', 'room', 'root', 'rose', 'rule', 'rush', 'ruth', 'safe', 'said', 'sake', 'sale', 'salt',
+            'same', 'sand', 'save', 'seat', 'seed', 'seek', 'seem', 'seen', 'self', 'sell', 'send', 'sent', 'sept',
+            'ship', 'shop', 'shot', 'show', 'shut', 'sick', 'side', 'sign', 'site', 'size', 'skin', 'slip', 'slow',
+            'snow', 'soft', 'soil', 'sold', 'sole', 'some', 'song', 'soon', 'sort', 'soul', 'spot', 'star', 'stay',
+            'step', 'stop', 'such', 'suit', 'sure', 'take', 'tale', 'talk', 'tall', 'tank', 'tape', 'task', 'team',
+            'tech', 'tell', 'tend', 'term', 'test', 'text', 'than', 'that', 'them', 'then', 'they', 'thin', 'this',
+            'thus', 'time', 'tiny', 'told', 'toll', 'tone', 'tony', 'took', 'tool', 'tour', 'town', 'tree', 'trip',
+            'true', 'tune', 'turn', 'twin', 'type', 'unit', 'upon', 'used', 'user', 'vary', 'vast', 'very', 'vice',
+            'view', 'vote', 'wage', 'wait', 'wake', 'walk', 'wall', 'want', 'ward', 'warm', 'wash', 'wave', 'ways',
+            'weak', 'wear', 'week', 'well', 'went', 'were', 'west', 'what', 'when', 'whom', 'wide', 'wife', 'wild',
+            'will', 'wind', 'wine', 'wing', 'wire', 'wise', 'wish', 'with', 'wood', 'word', 'wore', 'work', 'yard',
+            'yeah', 'year', 'your', 'zero', 'zone'
         ];
         
         const LONG_WORDS = [
-            'ability', 'achieve', 'acquire', 'advance', 'against', 'already', 'amazing', 'another', 'asteroid', 'because', 
+            'ability', 'achieve', 'acquire', 'advance', 'against', 'already', 'amazing', 'another', 'asteroid', 'because', 'bryant',
             'believe', 'between', 'billion', 'brother', 'captain', 'central', 'century', 'certain', 'challenge', 'character', 
-            'children', 'complete', 'computer', 'consider', 'continue', 'control', 'creative', 'culture', 'current', 'decision', 
+            'children', 'complete', 'computer', 'consider', 'corbin', 'continue', 'control', 'creative', 'culture', 'current', 'decision', 
             'defense', 'develop', 'different', 'difficult', 'discover', 'economic', 'education', 'effective', 'electric', 'emergency', 
             'everyone', 'evidence', 'exercise', 'experience', 'explorer', 'external', 'favorite', 'federal', 'feeling', 'finally', 
-            'financial', 'forever', 'forward', 'freedom', 'further', 'galactic', 'general', 'generate', 'government', 'graduate', 
+            'financial', 'forever', 'forward', 'freedom', 'further', 'galactic', 'geordie', 'general', 'generate', 'government', 'graduate', 
             'greatest', 'however', 'hundred', 'identify', 'imagine', 'improve', 'include', 'increase', 'indicate', 'individual', 
-            'industry', 'interest', 'internal', 'international', 'language', 'learning', 'machine', 'material', 'measure', 'medical', 
+            'industry', 'interest', 'internal', 'international', 'language', 'learning', 'machine', 'material', 'matthew', 'measure', 'medical', 
             'meeting', 'military', 'million', 'mission', 'morning', 'movement', 'national', 'natural', 'network', 'nothing', 
-            'nuclear', 'observe', 'officer', 'operation', 'opportunity', 'organization', 'original', 'package', 'parallel', 'pattern', 
+            'nuclear', 'observe', 'officer', 'operation', 'organization', 'original', 'package', 'parallel', 'pattern', 
             'peaceful', 'personal', 'physical', 'planetary', 'platform', 'position', 'positive', 'possible', 'practice', 'prepare', 
             'present', 'pressure', 'prevent', 'primary', 'private', 'probably', 'problem', 'process', 'produce', 'product', 
             'program', 'progress', 'project', 'property', 'protect', 'provide', 'purpose', 'quality', 'quantum', 'question', 
@@ -428,6 +556,9 @@
             // Setup mobile support
             setupMobileSupport();
             
+            // Setup enhanced HUD
+            setupEnhancedHUD();
+            
             // Initial render
             render();
         };
@@ -439,16 +570,65 @@
         
         function createStars() {
             stars = [];
-            const numStars = 100;
+            // Create three layers of stars for parallax effect
+            const numStarsLayer1 = 70;  // Distant stars (slow)
+            const numStarsLayer2 = 40;  // Mid-distance stars (medium)
+            const numStarsLayer3 = 20;  // Close stars (fast)
             
-            for (let i = 0; i < numStars; i++) {
+            // Layer 1 - Distant stars (small, slow, dim)
+            for (let i = 0; i < numStarsLayer1; i++) {
+                stars.push({
+                    x: Math.random() * CANVAS_WIDTH,
+                    y: Math.random() * CANVAS_HEIGHT,
+                    size: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 0.15 + 0.05,
+                    layer: 1,
+                    brightness: 0.6 + Math.random() * 0.2,
+                    twinkleSpeed: 0.001 + Math.random() * 0.003,
+                    twinklePhase: Math.random() * Math.PI * 2
+                });
+            }
+            
+            // Layer 2 - Mid-distance stars (medium, medium speed, brighter)
+            for (let i = 0; i < numStarsLayer2; i++) {
                 stars.push({
                     x: Math.random() * CANVAS_WIDTH,
                     y: Math.random() * CANVAS_HEIGHT,
                     size: Math.random() * 2 + 1,
-                    speed: Math.random() * 0.3 + 0.1
+                    speed: Math.random() * 0.3 + 0.2,
+                    layer: 2,
+                    brightness: 0.8 + Math.random() * 0.2,
+                    twinkleSpeed: 0.002 + Math.random() * 0.004,
+                    twinklePhase: Math.random() * Math.PI * 2,
+                    color: Math.random() < 0.3 ? getRandomStarColor() : null // Some colored stars
                 });
             }
+            
+            // Layer 3 - Close stars (larger, faster, brightest)
+            for (let i = 0; i < numStarsLayer3; i++) {
+                stars.push({
+                    x: Math.random() * CANVAS_WIDTH,
+                    y: Math.random() * CANVAS_HEIGHT,
+                    size: Math.random() * 2.5 + 1.5,
+                    speed: Math.random() * 0.5 + 0.3,
+                    layer: 3,
+                    brightness: 0.9 + Math.random() * 0.1,
+                    twinkleSpeed: 0.003 + Math.random() * 0.005,
+                    twinklePhase: Math.random() * Math.PI * 2,
+                    color: Math.random() < 0.5 ? getRandomStarColor() : null // More colored stars
+                });
+            }
+        }
+        
+        // Helper function to get random star colors
+        function getRandomStarColor() {
+            const colors = [
+                'rgba(200, 200, 255, 1)', // Blue-white
+                'rgba(255, 200, 200, 1)', // Red-white
+                'rgba(255, 230, 200, 1)', // Yellow-white
+                'rgba(200, 255, 200, 1)'  // Green-white
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
         }
         
         function startGame() {
@@ -520,8 +700,13 @@
         
         function updateStars(deltaTime) {
             for (let star of stars) {
+                // Update position based on layer speed
                 star.y += star.speed * deltaTime / 16;
                 
+                // Update twinkle effect
+                star.twinklePhase += star.twinkleSpeed * deltaTime;
+                
+                // Wrap around when star goes off screen
                 if (star.y > CANVAS_HEIGHT) {
                     star.y = 0;
                     star.x = Math.random() * CANVAS_WIDTH;
@@ -583,7 +768,37 @@
                 const dy = laser.targetY - laser.startY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                laser.progress += 0.1 * deltaTime / 16;
+                // Faster progress for a more dynamic feel
+                laser.progress += 0.12 * deltaTime / 16;
+                
+                // Calculate current position
+                const currentX = laser.startX + (laser.targetX - laser.startX) * laser.progress;
+                const currentY = laser.startY + (laser.targetY - laser.startY) * laser.progress;
+                
+                // Add particles along the laser path
+                if (Math.random() < 0.3) {
+                    // Add particles with slight offset from laser path
+                    const particleOffsetX = (Math.random() - 0.5) * 5;
+                    const particleOffsetY = (Math.random() - 0.5) * 5;
+                    
+                    laser.particles.push({
+                        x: currentX + particleOffsetX,
+                        y: currentY + particleOffsetY,
+                        size: 1 + Math.random() * 2,
+                        life: 1.0,
+                        decay: 0.02 + Math.random() * 0.03
+                    });
+                }
+                
+                // Update existing particles
+                for (let j = laser.particles.length - 1; j >= 0; j--) {
+                    const particle = laser.particles[j];
+                    particle.life -= particle.decay * deltaTime / 16;
+                    
+                    if (particle.life <= 0) {
+                        laser.particles.splice(j, 1);
+                    }
+                }
                 
                 // Remove laser if it reached target
                 if (laser.progress >= 1) {
@@ -598,17 +813,19 @@
                 
                 explosion.time += deltaTime / 16;
                 
-                // Update fragment positions if it's a fragment
-                if (explosion.type === 'fragment' && explosion.vx !== undefined && explosion.vy !== undefined) {
+                // Update positions for moving explosion types
+                if (explosion.vx !== undefined && explosion.vy !== undefined) {
                     // Update position based on velocity
                     explosion.x += explosion.vx * deltaTime / 16;
                     explosion.y += explosion.vy * deltaTime / 16;
                     
-                    // Add gravity effect
-                    explosion.vy += 0.05 * deltaTime / 16;
+                    // Add gravity effect for fragments and particles
+                    if (explosion.type === 'fragment' || explosion.type === 'particle') {
+                        explosion.vy += 0.05 * deltaTime / 16;
+                    }
                     
-                    // Update rotation
-                    if (explosion.rotationSpeed) {
+                    // Update rotation for fragments
+                    if (explosion.type === 'fragment' && explosion.rotationSpeed) {
                         explosion.rotation += explosion.rotationSpeed * deltaTime / 16;
                     }
                 }
@@ -641,12 +858,57 @@
         }
         
         function drawStars() {
-            ctx.fillStyle = 'white';
-            
-            for (let star of stars) {
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                ctx.fill();
+            // Draw stars by layer (back to front)
+            for (let layer = 1; layer <= 3; layer++) {
+                for (let star of stars.filter(s => s.layer === layer)) {
+                    // Calculate twinkle effect
+                    const twinkle = 0.7 + 0.3 * Math.sin(star.twinklePhase);
+                    const brightness = star.brightness * twinkle;
+                    
+                    // Set star color with brightness
+                    if (star.color) {
+                        ctx.fillStyle = star.color;
+                    } else {
+                        ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+                    }
+                    
+                    // Draw star
+                    ctx.beginPath();
+                    
+                    // Larger stars in layer 3 get a more complex shape
+                    if (star.layer === 3 && star.size > 2.5) {
+                        // Draw a four-point star
+                        const outerRadius = star.size;
+                        const innerRadius = star.size * 0.4;
+                        
+                        for (let i = 0; i < 8; i++) {
+                            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                            const angle = (i / 8) * Math.PI * 2;
+                            const x = star.x + Math.cos(angle) * radius;
+                            const y = star.y + Math.sin(angle) * radius;
+                            
+                            if (i === 0) {
+                                ctx.moveTo(x, y);
+                            } else {
+                                ctx.lineTo(x, y);
+                            }
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Add glow effect for bright stars
+                        ctx.save();
+                        ctx.globalAlpha = 0.3 * brightness;
+                        ctx.shadowColor = star.color || 'white';
+                        ctx.shadowBlur = 5;
+                        ctx.fill();
+                        ctx.restore();
+                    } else {
+                        // Simple circle for smaller stars
+                        ctx.arc(star.x, star.y, star.size * twinkle, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
             }
         }
         
@@ -654,9 +916,49 @@
             const x = canvas.width / 2;
             const y = canvas.height - PLAYER_SHIP_HEIGHT / 2;
             
-            ctx.fillStyle = '#4CAF50';
+            // Create engine glow effect
+            const engineGlowTime = Date.now() / 50; // Time factor for animation
+            const engineGlowSize = 15 + Math.sin(engineGlowTime) * 5; // Pulsing size
             
-            // Draw ship body
+            // Draw engine glow
+            const engineGlow = ctx.createRadialGradient(
+                x, y + PLAYER_SHIP_HEIGHT / 2, 0,
+                x, y + PLAYER_SHIP_HEIGHT / 2, engineGlowSize
+            );
+            engineGlow.addColorStop(0, 'rgba(0, 255, 200, 0.8)');
+            engineGlow.addColorStop(0.5, 'rgba(0, 200, 150, 0.5)');
+            engineGlow.addColorStop(1, 'rgba(0, 100, 100, 0)');
+            
+            ctx.fillStyle = engineGlow;
+            ctx.beginPath();
+            ctx.arc(x, y + PLAYER_SHIP_HEIGHT / 2, engineGlowSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw engine thrust particles
+            for (let i = 0; i < 5; i++) {
+                const particleSize = 2 + Math.random() * 3;
+                const particleX = x + (Math.random() - 0.5) * 10;
+                const particleY = y + PLAYER_SHIP_HEIGHT / 2 + 5 + Math.random() * 15;
+                const particleOpacity = 0.7 - (particleY - (y + PLAYER_SHIP_HEIGHT / 2)) / 20;
+                
+                ctx.fillStyle = `rgba(0, 255, 200, ${particleOpacity})`;
+                ctx.beginPath();
+                ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw ship body with gradient
+            const shipGradient = ctx.createLinearGradient(
+                x, y - PLAYER_SHIP_HEIGHT / 2,
+                x, y + PLAYER_SHIP_HEIGHT / 2
+            );
+            shipGradient.addColorStop(0, '#4CAF50');
+            shipGradient.addColorStop(0.7, '#388E3C');
+            shipGradient.addColorStop(1, '#1B5E20');
+            
+            ctx.fillStyle = shipGradient;
+            
+            // Draw main ship body
             ctx.beginPath();
             ctx.moveTo(x, y - PLAYER_SHIP_HEIGHT / 2);
             ctx.lineTo(x - PLAYER_SHIP_WIDTH / 2, y + PLAYER_SHIP_HEIGHT / 2);
@@ -664,11 +966,73 @@
             ctx.closePath();
             ctx.fill();
             
-            // Draw cockpit
-            ctx.fillStyle = '#80DEEA';
+            // Add ship details - wings
+            ctx.fillStyle = '#2E7D32';
+            
+            // Left wing
+            ctx.beginPath();
+            ctx.moveTo(x - PLAYER_SHIP_WIDTH / 4, y);
+            ctx.lineTo(x - PLAYER_SHIP_WIDTH / 2 - 10, y + PLAYER_SHIP_HEIGHT / 4);
+            ctx.lineTo(x - PLAYER_SHIP_WIDTH / 2, y + PLAYER_SHIP_HEIGHT / 2);
+            ctx.lineTo(x - PLAYER_SHIP_WIDTH / 4, y + PLAYER_SHIP_HEIGHT / 4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Right wing
+            ctx.beginPath();
+            ctx.moveTo(x + PLAYER_SHIP_WIDTH / 4, y);
+            ctx.lineTo(x + PLAYER_SHIP_WIDTH / 2 + 10, y + PLAYER_SHIP_HEIGHT / 4);
+            ctx.lineTo(x + PLAYER_SHIP_WIDTH / 2, y + PLAYER_SHIP_HEIGHT / 2);
+            ctx.lineTo(x + PLAYER_SHIP_WIDTH / 4, y + PLAYER_SHIP_HEIGHT / 4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add metallic highlights
+            ctx.strokeStyle = 'rgba(200, 255, 200, 0.7)';
+            ctx.lineWidth = 1;
+            
+            // Highlight on main body
+            ctx.beginPath();
+            ctx.moveTo(x - PLAYER_SHIP_WIDTH / 4, y - PLAYER_SHIP_HEIGHT / 4);
+            ctx.lineTo(x + PLAYER_SHIP_WIDTH / 4, y - PLAYER_SHIP_HEIGHT / 4);
+            ctx.stroke();
+            
+            // Highlight on wings
+            ctx.beginPath();
+            ctx.moveTo(x - PLAYER_SHIP_WIDTH / 3, y + PLAYER_SHIP_HEIGHT / 6);
+            ctx.lineTo(x - PLAYER_SHIP_WIDTH / 2 - 5, y + PLAYER_SHIP_HEIGHT / 3);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x + PLAYER_SHIP_WIDTH / 3, y + PLAYER_SHIP_HEIGHT / 6);
+            ctx.lineTo(x + PLAYER_SHIP_WIDTH / 2 + 5, y + PLAYER_SHIP_HEIGHT / 3);
+            ctx.stroke();
+            
+            // Draw cockpit with glow effect
+            ctx.save();
+            ctx.shadowColor = 'rgba(100, 255, 255, 0.8)';
+            ctx.shadowBlur = 10;
+            
+            const cockpitGradient = ctx.createRadialGradient(
+                x, y, 0,
+                x, y, PLAYER_SHIP_HEIGHT / 4
+            );
+            cockpitGradient.addColorStop(0, '#E0F7FA');
+            cockpitGradient.addColorStop(0.7, '#80DEEA');
+            cockpitGradient.addColorStop(1, '#26C6DA');
+            
+            ctx.fillStyle = cockpitGradient;
             ctx.beginPath();
             ctx.arc(x, y, PLAYER_SHIP_HEIGHT / 4, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
+            
+            // Add cockpit detail
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, PLAYER_SHIP_HEIGHT / 6, 0, Math.PI, true);
+            ctx.stroke();
         }
         
         function drawEnemyShips() {
@@ -988,27 +1352,75 @@
         }
         
         function drawLasers() {
-            ctx.lineWidth = 2;
-            
             for (const laser of lasers) {
-                const startX = canvas.width / 2;
-                const startY = canvas.height - PLAYER_SHIP_HEIGHT / 2;
+                const startX = laser.startX;
+                const startY = laser.startY;
                 
                 const currentX = startX + (laser.targetX - startX) * laser.progress;
                 const currentY = startY + (laser.targetY - startY) * laser.progress;
                 
-                // Draw laser beam
+                // Draw laser particles first (behind the beam)
+                for (const particle of laser.particles) {
+                    const alpha = particle.life * 0.7;
+                    ctx.fillStyle = `rgba(100, 255, 150, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Create a pulsing effect for the laser
+                const pulseTime = (Date.now() - laser.creationTime) / 50;
+                const pulseWidth = laser.width * (0.8 + 0.2 * Math.sin(pulseTime));
+                
+                // Draw laser beam with glow effect
+                ctx.save();
+                
+                // Outer glow
+                ctx.shadowColor = '#4CAF50';
+                ctx.shadowBlur = 10;
+                ctx.lineWidth = pulseWidth;
                 ctx.strokeStyle = laser.color;
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(currentX, currentY);
                 ctx.stroke();
                 
-                // Draw laser head
-                ctx.fillStyle = laser.color;
+                // Inner core (brighter)
+                ctx.lineWidth = pulseWidth * 0.5;
+                ctx.strokeStyle = '#AAFFAA';
                 ctx.beginPath();
-                ctx.arc(currentX, currentY, 3, 0, Math.PI * 2);
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+                
+                ctx.restore();
+                
+                // Draw laser head with glow
+                ctx.save();
+                ctx.shadowColor = '#4CAF50';
+                ctx.shadowBlur = 15;
+                
+                // Outer glow
+                const headGradient = ctx.createRadialGradient(
+                    currentX, currentY, 0,
+                    currentX, currentY, 6
+                );
+                headGradient.addColorStop(0, '#FFFFFF');
+                headGradient.addColorStop(0.3, '#AAFFAA');
+                headGradient.addColorStop(1, 'rgba(76, 175, 80, 0)');
+                
+                ctx.fillStyle = headGradient;
+                ctx.beginPath();
+                ctx.arc(currentX, currentY, 6, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Inner core
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(currentX, currentY, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
             }
         }
         
@@ -1052,14 +1464,27 @@
                     
                     ctx.closePath();
                     
-                    // Create fragment texture
+                    // Create fragment texture with gradient
                     const gradient = ctx.createRadialGradient(
                         0, 0, 0,
                         0, 0, radius
                     );
                     
-                    gradient.addColorStop(0, `rgba(120, 120, 120, ${opacity})`);
-                    gradient.addColorStop(1, `rgba(80, 80, 80, ${opacity})`);
+                    // Fixed color handling
+                    if (explosion.color && typeof explosion.color === 'string' && explosion.color.startsWith('#')) {
+                        // Convert hex to RGB
+                        const hex = explosion.color.substring(1);
+                        const r = parseInt(hex.substring(0, 2), 16);
+                        const g = parseInt(hex.substring(2, 4), 16);
+                        const b = parseInt(hex.substring(4, 6), 16);
+                        
+                        gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${opacity})`);
+                        gradient.addColorStop(1, `rgba(${Math.floor(r*0.7)}, ${Math.floor(g*0.7)}, ${Math.floor(b*0.7)}, ${opacity})`);
+                    } else {
+                        // Default colors
+                        gradient.addColorStop(0, `rgba(120, 120, 120, ${opacity})`);
+                        gradient.addColorStop(1, `rgba(80, 80, 80, ${opacity})`);
+                    }
                     
                     ctx.fillStyle = gradient;
                     ctx.fill();
@@ -1069,25 +1494,140 @@
                     ctx.stroke();
                     
                     ctx.restore();
-                } else {
+                } 
+                else if (explosion.type === 'particle') {
+                    // Draw small debris particles
+                    const fadeStart = 0.6;
+                    const opacity = progress > fadeStart ? 
+                        1 - ((progress - fadeStart) / (1 - fadeStart)) : 1;
+                    
+                    ctx.fillStyle = explosion.color || `rgba(255, 200, 100, ${opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Add glow for some particles
+                    if (explosion.radius > 1.5) {
+                        ctx.save();
+                        ctx.globalAlpha = opacity * 0.6;
+                        ctx.shadowColor = explosion.color || 'rgba(255, 200, 100, 1)';
+                        ctx.shadowBlur = 5;
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+                else if (explosion.type === 'shockwave') {
+                    // Draw expanding shockwave ring
+                    const ringProgress = Math.pow(progress, 0.7); // Accelerate expansion
+                    const ringRadius = explosion.radius * ringProgress;
+                    const ringWidth = 3 * (1 - progress); // Gets thinner as it expands
+                    
+                    ctx.save();
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 * (1 - progress)})`; // Fade out
+                    ctx.lineWidth = ringWidth;
+                    ctx.beginPath();
+                    ctx.arc(explosion.x, explosion.y, ringRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                else if (explosion.type === 'score') {
+                    // Draw score popup text
+                    const fadeStart = 0.7;
+                    const opacity = progress > fadeStart ? 
+                        1 - ((progress - fadeStart) / (1 - fadeStart)) : 1;
+                    
+                    ctx.save();
+                    ctx.font = 'bold 24px Arial';
+                    ctx.fillStyle = `rgba(255, 255, 100, ${opacity})`;
+                    ctx.strokeStyle = `rgba(0, 0, 0, ${opacity * 0.5})`;
+                    ctx.lineWidth = 3;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Add glow effect
+                    ctx.shadowColor = 'rgba(255, 255, 0, 0.8)';
+                    ctx.shadowBlur = 10;
+                    
+                    // Draw text with upward movement
+                    ctx.strokeText(explosion.text, explosion.x, explosion.y - 20 * progress);
+                    ctx.fillText(explosion.text, explosion.x, explosion.y - 20 * progress);
+                    ctx.restore();
+                }
+                else if (explosion.type === 'targeting') {
+                    // Draw targeting circle effect
+                    const radius = explosion.radius * (1 - progress);
+                    const opacity = 0.8 * (1 - progress);
+                    
+                    ctx.save();
+                    ctx.strokeStyle = `rgba(76, 175, 80, ${opacity})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(explosion.x, explosion.y, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Add targeting lines
+                    const lineLength = 10;
+                    const positions = [
+                        { x: explosion.x, y: explosion.y - radius },  // Top
+                        { x: explosion.x + radius, y: explosion.y },  // Right
+                        { x: explosion.x, y: explosion.y + radius },  // Bottom
+                        { x: explosion.x - radius, y: explosion.y }   // Left
+                    ];
+                    
+                    for (const pos of positions) {
+                        const angle = Math.atan2(pos.y - explosion.y, pos.x - explosion.x);
+                        const innerX = pos.x - Math.cos(angle) * lineLength;
+                        const innerY = pos.y - Math.sin(angle) * lineLength;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(pos.x, pos.y);
+                        ctx.lineTo(innerX, innerY);
+                        ctx.stroke();
+                    }
+                    
+                    ctx.restore();
+                }
+                else {
                     // Draw main explosion
                     const radius = explosion.radius * Math.sin(progress * Math.PI);
                     
-                    // Create gradient
+                    // Create gradient with custom color
+                    const baseColor = explosion.color || 'orange';
                     const gradient = ctx.createRadialGradient(
                         explosion.x, explosion.y, 0,
                         explosion.x, explosion.y, radius
                     );
                     
-                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-                    gradient.addColorStop(0.4, 'rgba(255, 200, 0, 0.8)');
-                    gradient.addColorStop(0.7, 'rgba(255, 100, 0, 0.8)');
-                    gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                    if (baseColor === 'red') {
+                        // Red explosion for error state
+                        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                        gradient.addColorStop(0.2, 'rgba(255, 200, 200, 0.8)');
+                        gradient.addColorStop(0.4, 'rgba(255, 100, 100, 0.8)');
+                        gradient.addColorStop(0.7, 'rgba(255, 50, 50, 0.8)');
+                        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                    } else {
+                        // Orange/yellow explosion for normal state
+                        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                        gradient.addColorStop(0.2, 'rgba(255, 255, 200, 0.8)');
+                        gradient.addColorStop(0.4, 'rgba(255, 200, 0, 0.8)');
+                        gradient.addColorStop(0.7, 'rgba(255, 100, 0, 0.8)');
+                        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                    }
                     
                     ctx.fillStyle = gradient;
                     ctx.beginPath();
                     ctx.arc(explosion.x, explosion.y, radius, 0, Math.PI * 2);
                     ctx.fill();
+                    
+                    // Add glow effect
+                    ctx.save();
+                    ctx.globalAlpha = 0.5 * (1 - progress);
+                    ctx.shadowColor = baseColor === 'red' ? 'rgba(255, 0, 0, 0.8)' : 'rgba(255, 200, 0, 0.8)';
+                    ctx.shadowBlur = 30;
+                    ctx.beginPath();
+                    ctx.arc(explosion.x, explosion.y, radius * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
                 }
             }
         }
@@ -1162,40 +1702,74 @@
         }
         
         function selectWord() {
-            // Early rounds (1-2): mix of short and medium words
+            // Early rounds (1-2): mostly short words with some medium words
             if (round <= 2) {
-                const wordPool = [...SHORT_WORDS, ...MEDIUM_WORDS];
-                return wordPool[Math.floor(Math.random() * wordPool.length)];
+                // 70% short words, 30% medium words
+                if (Math.random() < 0.7) {
+                    return SHORT_WORDS[Math.floor(Math.random() * SHORT_WORDS.length)];
+                } else {
+                    return MEDIUM_WORDS[Math.floor(Math.random() * MEDIUM_WORDS.length)];
+                }
             } 
-            // Mid rounds (3-4): medium words and some long words
+            // Rounds 3-4: balanced mix of short and medium words
             else if (round <= 4) {
-                const wordPool = [...MEDIUM_WORDS, ...LONG_WORDS.slice(0, 30)];
-                return wordPool[Math.floor(Math.random() * wordPool.length)];
-            }
-            // Advanced rounds (5-9): increasingly favor longer words
-            else if (round <= 9) {
-                const longWordChance = Math.min(0.8, 0.4 + (round - 4) * 0.1);
-                if (Math.random() < longWordChance) {
-                    return LONG_WORDS[Math.floor(Math.random() * LONG_WORDS.length)];
+                // 40% short words, 60% medium words
+                if (Math.random() < 0.4) {
+                    return SHORT_WORDS[Math.floor(Math.random() * SHORT_WORDS.length)];
                 } else {
                     return MEDIUM_WORDS[Math.floor(Math.random() * MEDIUM_WORDS.length)];
                 }
             }
-            // Expert rounds (10+): chance for extra-long words
-            else {
-                // 15% chance for extra-long word (10+ characters)
-                if (Math.random() < 0.15) {
-                    const extraLongWords = LONG_WORDS.filter(word => word.length >= 10);
-                    return extraLongWords[Math.floor(Math.random() * extraLongWords.length)];
-                }
-                // 60% chance for regular long word
-                else if (Math.random() < 0.75) {
-                    const regularLongWords = LONG_WORDS.filter(word => word.length < 10);
-                    return regularLongWords[Math.floor(Math.random() * regularLongWords.length)];
-                }
-                // 25% chance for medium word
-                else {
+            // Rounds 5-7: medium words with gradual introduction of long words
+            else if (round <= 7) {
+                // Calculate long word chance: 5% at round 5, increasing by 5% each round (max 15%)
+                const longWordChance = 0.05 * (round - 4);
+                // Calculate short word chance: starts at 25% and decreases
+                const shortWordChance = Math.max(0.1, 0.25 - 0.05 * (round - 5));
+                
+                if (Math.random() < longWordChance) {
+                    // For long words, start with shorter ones from the long word pool
+                    const easierLongWords = LONG_WORDS.filter(word => word.length <= 7);
+                    return easierLongWords[Math.floor(Math.random() * easierLongWords.length)];
+                } else if (Math.random() < shortWordChance) {
+                    return SHORT_WORDS[Math.floor(Math.random() * SHORT_WORDS.length)];
+                } else {
                     return MEDIUM_WORDS[Math.floor(Math.random() * MEDIUM_WORDS.length)];
+                }
+            }
+            // Rounds 8-10: still mostly medium words with some long words
+            else if (round <= 10) {
+                // 15% short, 65% medium, 20% long words
+                const rand = Math.random();
+                if (rand < 0.15) {
+                    return SHORT_WORDS[Math.floor(Math.random() * SHORT_WORDS.length)];
+                } else if (rand < 0.8) {
+                    return MEDIUM_WORDS[Math.floor(Math.random() * MEDIUM_WORDS.length)];
+                } else {
+                    // Keep words at a reasonable length
+                    const maxLength = Math.min(8, 6 + Math.floor((round - 8) / 2));
+                    const filteredLongWords = LONG_WORDS.filter(word => word.length <= maxLength);
+                    return filteredLongWords[Math.floor(Math.random() * filteredLongWords.length)];
+                }
+            }
+            // Rounds 11+: challenging mix but still mostly medium words
+            else {
+                const rand = Math.random();
+                // 10% short, 60% medium, 30% long words
+                if (rand < 0.1) {
+                    return SHORT_WORDS[Math.floor(Math.random() * SHORT_WORDS.length)];
+                } else if (rand < 0.7) {
+                    return MEDIUM_WORDS[Math.floor(Math.random() * MEDIUM_WORDS.length)];
+                } else {
+                    // Only 5% chance for extra-long word (10+ characters) after round 12
+                    if (round >= 12 && Math.random() < 0.05) {
+                        const extraLongWords = LONG_WORDS.filter(word => word.length >= 10);
+                        return extraLongWords[Math.floor(Math.random() * extraLongWords.length)];
+                    } else {
+                        // Regular long words (less than 10 characters)
+                        const regularLongWords = LONG_WORDS.filter(word => word.length < 9);
+                        return regularLongWords[Math.floor(Math.random() * regularLongWords.length)];
+                    }
                 }
             }
         }
@@ -1230,6 +1804,9 @@
                             };
                         }
                         
+                        // Add visual feedback for successful targeting
+                        createTargetingEffect(ship);
+                        
                         // Fire laser
                         fireLaser(ship);
                         break;
@@ -1244,6 +1821,9 @@
                 if (key === nextChar) {
                     // Correct key
                     currentTypingWord += key;
+                    
+                    // Add visual feedback for successful typing
+                    createSuccessTypingEffect();
                     
                     // Fire laser
                     fireLaser(currentTargetShip);
@@ -1299,13 +1879,19 @@
             const startX = canvas.width / 2;
             const startY = canvas.height - PLAYER_SHIP_HEIGHT / 2;
             
+            // Create a more interesting laser color based on progress
+            const baseColor = '#4CAF50';
+            
             lasers.push({
                 startX: startX,
                 startY: startY,
                 targetX: targetShip.x,
                 targetY: targetShip.y,
                 progress: 0,
-                color: '#4CAF50'
+                color: baseColor,
+                width: 3,
+                particles: [],
+                creationTime: Date.now()
             });
 
             // Play laser sound
@@ -1351,18 +1937,37 @@
                 x: ship.x,
                 y: ship.y,
                 radius: explosionSize,
+                duration: 40, // Longer duration
+                time: 0,
+                type: 'main',
+                color: ship.errorState && ship.errorState.isError ? 'red' : 'orange' // Different color for error state
+            });
+            
+            // Create shockwave effect
+            explosions.push({
+                x: ship.x,
+                y: ship.y,
+                radius: explosionSize * 1.5,
                 duration: 30,
                 time: 0,
-                type: 'main'
+                type: 'shockwave'
             });
             
             // Create asteroid fragments
-            const fragmentCount = Math.min(8, 3 + Math.floor(ship.word.length / 2));
+            const fragmentCount = Math.min(12, 4 + Math.floor(ship.word.length / 2));
+            
+            // Define fragment colors properly
+            const errorColors = ['#FF5555', '#FF3333', '#FF0000'];
+            const normalColors = ['#777777', '#666666', '#555555'];
             
             for (let i = 0; i < fragmentCount; i++) {
                 const angle = (i / fragmentCount) * Math.PI * 2;
-                const speed = 1 + Math.random() * 2;
+                const speed = 1 + Math.random() * 3;
                 const distance = ship.width / 2;
+                
+                // Select color based on error state
+                const colorArray = ship.errorState && ship.errorState.isError ? errorColors : normalColors;
+                const fragmentColor = colorArray[Math.floor(Math.random() * colorArray.length)];
                 
                 // Create fragment with velocity
                 explosions.push({
@@ -1371,11 +1976,47 @@
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed,
                     radius: ship.width / 4 * (0.5 + Math.random() * 0.5),
-                    duration: 45,
+                    duration: 60, // Longer duration
                     time: 0,
                     type: 'fragment',
                     rotation: Math.random() * Math.PI * 2,
-                    rotationSpeed: (Math.random() - 0.5) * 0.2
+                    rotationSpeed: (Math.random() - 0.5) * 0.2,
+                    color: fragmentColor
+                });
+            }
+            
+            // Add small particle debris
+            const particleCount = 20 + Math.floor(ship.word.length * 3);
+            for (let i = 0; i < particleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 0.5 + Math.random() * 4;
+                
+                // Create proper RGBA colors for particles
+                let particleColor;
+                if (ship.errorState && ship.errorState.isError) {
+                    // Red particles for error state
+                    const r = 255;
+                    const g = Math.floor(Math.random() * 100);
+                    const b = Math.floor(Math.random() * 50);
+                    particleColor = `rgba(${r}, ${g}, ${b}, 1)`;
+                } else {
+                    // Orange/yellow particles for normal state
+                    const r = 255;
+                    const g = 150 + Math.floor(Math.random() * 100);
+                    const b = Math.floor(Math.random() * 100);
+                    particleColor = `rgba(${r}, ${g}, ${b}, 1)`;
+                }
+                
+                explosions.push({
+                    x: ship.x,
+                    y: ship.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: 0.5 + Math.random() * 2,
+                    duration: 30 + Math.random() * 30,
+                    time: 0,
+                    type: 'particle',
+                    color: particleColor
                 });
             }
             
@@ -1385,6 +2026,9 @@
             // Award points based on word length
             const points = ship.word.length * 10;
             score += points;
+            
+            // Create score popup
+            createScorePopup(ship.x, ship.y, points);
             
             // Reset current typing
             currentTypingWord = '';
@@ -1441,36 +2085,62 @@
         }
         
         function getEnemySpeed() {
-            // Exponential speed increase after round 5
-            if (round <= 5) {
-                return ENEMY_SPEED_BASE * (1 + (round - 1) * 0.1);
+            // More aggressive speed increase across all rounds
+            if (round <= 3) {
+                // Gentle increase for first few rounds
+                return ENEMY_SPEED_BASE * (1 + (round - 1) * 0.07);
+            } else if (round <= 7) {
+                // Moderate increase for middle rounds
+                return ENEMY_SPEED_BASE * (1.14 + (round - 3) * 0.1);
             } else {
-                return ENEMY_SPEED_BASE * (1.4 + Math.pow(round - 5, 0.7) * 0.15);
+                // More challenging increase for later rounds to compensate for easier words
+                return ENEMY_SPEED_BASE * (1.54 + Math.pow(round - 7, 0.7) * 0.12);
             }
         }
         
         function getSpawnInterval() {
-            // Faster spawn rate in later rounds
-            if (round <= 5) {
-                return Math.max(2000, ENEMY_SPAWN_INTERVAL_BASE - (round - 1) * 200);
+            // More aggressive spawn rate changes
+            if (round <= 3) {
+                // Keep spawn rate fairly slow in early rounds
+                return ENEMY_SPAWN_INTERVAL_BASE - (round - 1) * 120;
+            } else if (round <= 7) {
+                // Moderate decrease in spawn interval for middle rounds
+                return ENEMY_SPAWN_INTERVAL_BASE - 360 - (round - 3) * 170;
             } else {
-                return Math.max(1000, ENEMY_SPAWN_INTERVAL_BASE - 1000 - (round - 5) * 100);
+                // More challenging but not overwhelming for later rounds
+                return Math.max(1000, ENEMY_SPAWN_INTERVAL_BASE - 1040 - (round - 7) * 100);
             }
         }
         
         function getMaxShips() {
-            // More concurrent ships in later rounds
-            if (round <= 5) {
-                return Math.min(4, 3 + Math.floor((round - 1) / 3));
+            // More gradual increase in maximum ships
+            if (round <= 3) {
+                // Start with fewer ships
+                return 2 + Math.floor((round - 1) / 3);
+            } else if (round <= 7) {
+                // Moderate increase for middle rounds
+                return 3 + Math.floor((round - 3) / 3);
             } else {
-                return Math.min(5, 4 + Math.floor((round - 5) / 2));
+                // Cap at a reasonable maximum
+                return Math.min(5, 4 + Math.floor((round - 7) / 3));
             }
         }
         
         function updateHUD() {
-            document.getElementById('score').textContent = `Score: ${score}`;
-            document.getElementById('lives').textContent = `Lives: ${lives}`;
-            document.getElementById('round').textContent = `Round: ${round}`;
+            // Update text content
+            document.getElementById('score').textContent = `SCORE: ${score}`;
+            document.getElementById('lives').textContent = `LIVES: ${lives}`;
+            document.getElementById('round').textContent = `ROUND: ${round}`;
+            
+            // Update lives display with visual indicators
+            const livesElement = document.getElementById('lives');
+            let livesHTML = 'LIVES: ';
+            
+            for (let i = 0; i < lives; i++) {
+                livesHTML += '<span class="life-icon">■</span> ';
+            }
+            
+            livesElement.innerHTML = livesHTML;
         }
         
         function endGame() {
@@ -1494,17 +2164,10 @@
             enemyShips = [];
             usedFirstLetters.clear();
             
-            // Show round transition
+            // Show round transition with enhanced styling
             const roundText = document.createElement('div');
-            roundText.style.position = 'absolute';
-            roundText.style.top = '50%';
-            roundText.style.left = '50%';
-            roundText.style.transform = 'translate(-50%, -50%)';
-            roundText.style.fontSize = '72px';
-            roundText.style.color = '#4CAF50';
-            roundText.style.fontWeight = 'bold';
-            roundText.style.zIndex = '100';
-            roundText.textContent = `Round ${round}`;
+            roundText.className = 'round-transition';
+            roundText.textContent = `ROUND ${round}`;
             document.getElementById('game-container').appendChild(roundText);
             
             // Remove round text and start next round after delay
@@ -1805,6 +2468,170 @@
             // Play sound
             oscillator.start();
             oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        // Add this function to create score popups if it doesn't exist
+        function createScorePopup(x, y, points) {
+            explosions.push({
+                x: x,
+                y: y,
+                vy: -1, // Move upward
+                text: `+${points}`,
+                duration: 60,
+                time: 0,
+                type: 'score'
+            });
+        }
+
+        // Add this to the window.onload function after the other style additions
+        function setupEnhancedHUD() {
+            // Add CSS for enhanced HUD
+            const style = document.createElement('style');
+            style.textContent = `
+                #hud {
+                    display: flex;
+                    flex-direction: column;
+                    background-color: rgba(0, 20, 0, 0.7);
+                    border: 1px solid #4CAF50;
+                    border-radius: 5px;
+                    padding: 10px 15px;
+                    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+                    font-family: 'Courier New', monospace;
+                    text-shadow: 0 0 5px rgba(76, 175, 80, 0.7);
+                    z-index: 5;
+                }
+                
+                #hud div {
+                    margin: 5px 0;
+                    position: relative;
+                    padding-left: 10px;
+                }
+                
+                #hud div:before {
+                    content: '>';
+                    position: absolute;
+                    left: 0;
+                    color: #4CAF50;
+                    animation: blink 1.5s infinite;
+                }
+                
+                @keyframes blink {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.3; }
+                }
+                
+                #score {
+                    color: #FFEB3B;
+                }
+                
+                #lives {
+                    color: #FF5252;
+                }
+                
+                #round {
+                    color: #2196F3;
+                }
+                
+                .life-icon {
+                    color: #FF5252;
+                    text-shadow: 0 0 8px #FF0000;
+                    font-size: 16px;
+                    animation: pulse 2s infinite;
+                }
+                
+                @keyframes pulse {
+                    0% { text-shadow: 0 0 8px #FF0000; }
+                    50% { text-shadow: 0 0 15px #FF0000; }
+                    100% { text-shadow: 0 0 8px #FF0000; }
+                }
+                
+                /* Enhanced round transition */
+                .round-transition {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 72px;
+                    color: #4CAF50;
+                    font-weight: bold;
+                    z-index: 100;
+                    text-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+                    animation: roundAppear 2.5s ease-in-out;
+                }
+                
+                @keyframes roundAppear {
+                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+                    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+                    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Update HUD initially
+            updateHUD();
+        }
+
+        // Add new functions for visual feedback effects
+        function createTargetingEffect(ship) {
+            // Create targeting circle effect
+            for (let i = 0; i < 2; i++) {
+                explosions.push({
+                    x: ship.x,
+                    y: ship.y,
+                    radius: ship.width / 2 + 10 + (i * 15),
+                    duration: 30,
+                    time: 0,
+                    type: 'targeting'
+                });
+            }
+            
+            // Add a subtle green flash for successful targeting
+            const flashOverlay = document.createElement('div');
+            flashOverlay.style.position = 'absolute';
+            flashOverlay.style.top = '0';
+            flashOverlay.style.left = '0';
+            flashOverlay.style.width = '100%';
+            flashOverlay.style.height = '100%';
+            flashOverlay.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+            flashOverlay.style.pointerEvents = 'none';
+            flashOverlay.style.zIndex = '4';
+            flashOverlay.style.opacity = '0.3';
+            document.getElementById('game-container').appendChild(flashOverlay);
+            
+            // Fade out and remove the flash
+            setTimeout(() => {
+                flashOverlay.style.transition = 'opacity 0.3s ease-out';
+                flashOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('game-container').removeChild(flashOverlay);
+                }, 300);
+            }, 100);
+        }
+
+        function createSuccessTypingEffect() {
+            // Create small particle burst at player ship position
+            const x = canvas.width / 2;
+            const y = canvas.height - PLAYER_SHIP_HEIGHT / 2;
+            
+            // Add small particles
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 3;
+                const distance = 10;
+                
+                explosions.push({
+                    x: x + Math.cos(angle) * distance,
+                    y: y + Math.sin(angle) * distance,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: 1 + Math.random() * 2,
+                    duration: 20,
+                    time: 0,
+                    type: 'particle',
+                    color: `rgba(100, 255, 100, ${0.7 + Math.random() * 0.3})`
+                });
+            }
         }
     </script>
 </body>
