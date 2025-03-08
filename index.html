@@ -2572,27 +2572,7 @@
                 });
             }
             
-            // Add a subtle green flash for successful targeting
-            const flashOverlay = document.createElement('div');
-            flashOverlay.style.position = 'absolute';
-            flashOverlay.style.top = '0';
-            flashOverlay.style.left = '0';
-            flashOverlay.style.width = '100%';
-            flashOverlay.style.height = '100%';
-            flashOverlay.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
-            flashOverlay.style.pointerEvents = 'none';
-            flashOverlay.style.zIndex = '4';
-            flashOverlay.style.opacity = '0.3';
-            document.getElementById('game-container').appendChild(flashOverlay);
-            
-            // Fade out and remove the flash
-            setTimeout(() => {
-                flashOverlay.style.transition = 'opacity 0.3s ease-out';
-                flashOverlay.style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('game-container').removeChild(flashOverlay);
-                }, 300);
-            }, 100);
+            // Green flash overlay removed
         }
 
         function createSuccessTypingEffect() {
