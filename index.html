@@ -2504,15 +2504,19 @@
                 #hud div {
                     margin: 5px 0;
                     position: relative;
-                    padding-left: 10px;
+                    padding-left: 20px; /* Increased from 10px to create more space */
+                    line-height: 1.2; /* Add line height to improve vertical spacing */
                 }
                 
                 #hud div:before {
                     content: '>';
                     position: absolute;
                     left: 0;
+                    top: 0; /* Align to top */
                     color: #4CAF50;
                     animation: blink 1.5s infinite;
+                    width: 15px; /* Fixed width for the character */
+                    text-align: center; /* Center the character in its space */
                 }
                 
                 @keyframes blink {
@@ -2537,6 +2541,7 @@
                     text-shadow: 0 0 8px #FF0000;
                     font-size: 16px;
                     animation: pulse 2s infinite;
+                    margin-left: 3px; /* Add spacing between life icons */
                 }
                 
                 @keyframes pulse {
