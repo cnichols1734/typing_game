@@ -2550,26 +2550,7 @@
                     100% { text-shadow: 0 0 8px #FF0000; }
                 }
                 
-                /* Enhanced round transition */
-                .round-transition {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    font-size: 72px;
-                    color: #4CAF50;
-                    font-weight: bold;
-                    z-index: 100;
-                    text-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
-                    animation: roundAppear 2.5s ease-in-out;
-                }
-                
-                @keyframes roundAppear {
-                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-                    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-                    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-                    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
-                }
+                /* Removed duplicate round transition CSS */
             `;
             document.head.appendChild(style);
             
