@@ -2560,19 +2560,8 @@
 
         // Add new functions for visual feedback effects
         function createTargetingEffect(ship) {
-            // Create targeting circle effect
-            for (let i = 0; i < 2; i++) {
-                explosions.push({
-                    x: ship.x,
-                    y: ship.y,
-                    radius: ship.width / 2 + 10 + (i * 15),
-                    duration: 30,
-                    time: 0,
-                    type: 'targeting'
-                });
-            }
-            
-            // Green flash overlay removed
+            // All targeting visual effects removed
+            // The ship will still be targeted functionally, but without visual effects
         }
 
         function createSuccessTypingEffect() {
