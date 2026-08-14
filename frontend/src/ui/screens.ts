@@ -1,9 +1,9 @@
 import Phaser from "phaser";
-import { fetchDaily, fetchScores, postScore } from "../api/client";
+import { fetchScores, postScore } from "../api/client";
 import { sfxUi, isMusicOn, setMusicOn, unlockAudio, setBed } from "../game/audio/audio";
 import { bus } from "../game/systems/bus";
 import { randomSeed } from "../game/systems/rng";
-import type { Mode, RunSummary, ScoreRow } from "../game/types";
+import type { RunSummary, ScorePeriod, ScoreRow } from "../game/types";
 import { PlayScene } from "../game/scenes/PlayScene";
 import { hideHud } from "./hud";
 import { setKeyboard } from "./keyboard";
@@ -47,9 +47,9 @@ function renderBoard(list: HTMLElement, rows: ScoreRow[]): void {
   });
 }
 
-async function loadBoard(mode: Mode, target: HTMLElement): Promise<void> {
+async function loadBoard(period: ScorePeriod, target: HTMLElement): Promise<void> {
   try {
-    const { scores } = await fetchScores(mode);
+    const { scores } = await fetchScores(period);
     renderBoard(target, scores);
   } catch {
     renderBoard(target, []);
@@ -60,10 +60,10 @@ export function mountShell(game: Phaser.Game): void {
   const menu = $("screen-menu");
   const results = $("screen-results");
   const pause = $("screen-pause");
-  const boardArcade = $("board-arcade");
-  const boardDaily = $("board-daily");
-  const resultsBoard = $("results-board");
-  const dailyLabel = $("daily-label");
+  const boardAlltime = $("board-alltime");
+  const boardToday = $("board-today");
+  const resultsAlltime = $("results-alltime");
+  const resultsToday = $("results-today");
   const musicBtn = $("btn-music") as HTMLButtonElement;
   const form = $("callsign-form") as HTMLFormElement;
   const callsign = $("callsign") as HTMLInputElement;
@@ -71,28 +71,21 @@ export function mountShell(game: Phaser.Game): void {
   const submitBtn = $("btn-submit") as HTMLButtonElement;
 
   let lastRun: RunSummary | null = null;
-  let lastMode: Mode = "arcade";
-  let daily: { date: string; seed: string } | null = null;
 
   const saved = localStorage.getItem("aphelion-callsign");
   if (saved) callsign.value = saved;
 
-  const refreshDaily = async () => {
-    try {
-      daily = await fetchDaily();
-      dailyLabel.textContent = `Daily seed ${daily.date}`;
-    } catch {
-      dailyLabel.textContent = "Daily board offline";
-    }
+  const loadMenuBoards = () => {
+    void loadBoard("all", boardAlltime);
+    void loadBoard("day", boardToday);
   };
 
-  const loadMenuBoards = () => {
-    void loadBoard("arcade", boardArcade);
-    void loadBoard("daily", boardDaily);
+  const loadResultBoards = () => {
+    void loadBoard("all", resultsAlltime);
+    void loadBoard("day", resultsToday);
   };
 
   loadMenuBoards();
-  void refreshDaily();
 
   musicBtn.textContent = isMusicOn() ? "Music on" : "Music off";
   const beginTheme = () => {
@@ -109,12 +102,10 @@ export function mountShell(game: Phaser.Game): void {
     sfxUi();
   });
 
-  const start = (mode: Mode) => {
+  const start = () => {
     unlockAudio();
     setBed();
     sfxUi();
-    lastMode = mode;
-    const seed = mode === "daily" ? daily?.seed ?? randomSeed() : randomSeed();
     show(menu, false);
     show(results, false);
     show(pause, false);
@@ -122,11 +113,10 @@ export function mountShell(game: Phaser.Game): void {
     wordLayer.clear();
     if (game.scene.isActive("menu")) game.scene.stop("menu");
     if (game.scene.isActive("play")) game.scene.stop("play");
-    game.scene.start("play", { mode, seed });
+    game.scene.start("play", { mode: "arcade", seed: randomSeed() });
   };
 
-  $("btn-arcade").addEventListener("click", () => start("arcade"));
-  $("btn-daily").addEventListener("click", () => start("daily"));
+  $("btn-play").addEventListener("click", start);
 
   $("btn-resume").addEventListener("click", () => {
     sfxUi();
@@ -149,7 +139,6 @@ export function mountShell(game: Phaser.Game): void {
     show(menu, true);
     if (!game.scene.isActive("menu")) game.scene.start("menu");
     loadMenuBoards();
-    void refreshDaily();
     setBed("idle");
   };
 
@@ -160,7 +149,7 @@ export function mountShell(game: Phaser.Game): void {
 
   $("btn-again").addEventListener("click", () => {
     sfxUi();
-    start(lastMode);
+    start();
   });
 
   bus.on("abort", () => toMenu());
@@ -177,13 +166,12 @@ export function mountShell(game: Phaser.Game): void {
     $("res-wpm").textContent = String(Math.round(run.wpm));
     $("res-acc").textContent = `${Math.round(run.accuracy * 100)}%`;
     $("res-streak").textContent = String(run.bestStreak);
-    $("results-eyebrow").textContent = run.mode === "daily" ? "DAILY CLOSED" : "GUNLINE BREACHED";
-    $("results-board-label").textContent = run.mode === "daily" ? "Daily" : "Arcade";
+    $("results-eyebrow").textContent = "GUNLINE BREACHED";
     submitNote.textContent = "";
     submitBtn.disabled = false;
     show(menu, false);
     show(results, true);
-    void loadBoard(run.mode, resultsBoard);
+    loadResultBoards();
   });
 
   form.addEventListener("submit", async (e) => {
@@ -198,11 +186,9 @@ export function mountShell(game: Phaser.Game): void {
     localStorage.setItem("aphelion-callsign", tag);
     submitBtn.disabled = true;
     try {
-      const res = await postScore(lastRun, tag);
-      submitNote.textContent = res.kept
-        ? "Kept your stronger mark for today."
-        : "Posted.";
-      void loadBoard(lastRun.mode, resultsBoard);
+      await postScore(lastRun, tag);
+      submitNote.textContent = "Posted.";
+      loadResultBoards();
     } catch (err) {
       submitNote.textContent = err instanceof Error ? err.message : "Board rejected the mark.";
       submitBtn.disabled = false;

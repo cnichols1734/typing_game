@@ -1,4 +1,4 @@
-import type { DailyInfo, Mode, RunSummary, ScoreRow } from "../game/types";
+import type { RunSummary, ScorePeriod, ScoreRow } from "../game/types";
 
 async function json<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const res = await fetch(input, init);
@@ -13,19 +13,24 @@ export function fetchHealth(): Promise<{ ok: boolean }> {
   return json("/api/health");
 }
 
-export function fetchDaily(): Promise<DailyInfo> {
-  return json("/api/daily");
-}
-
-export function fetchScores(mode: Mode, limit = 12): Promise<{ scores: ScoreRow[] }> {
-  return json(`/api/scores?mode=${mode}&limit=${limit}`);
+export function fetchScores(period: ScorePeriod, limit = 5): Promise<{ scores: ScoreRow[] }> {
+  const params = new URLSearchParams({
+    period,
+    limit: String(limit),
+  });
+  if (period === "day") {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    params.set("day", `${now.getFullYear()}-${month}-${day}`);
+    params.set("tz", String(now.getTimezoneOffset()));
+  }
+  return json(`/api/scores?${params}`);
 }
 
 export function postScore(run: RunSummary, callsign: string): Promise<{
   ok: boolean;
-  kept?: boolean;
   id: number;
-  score?: number;
 }> {
   return json("/api/scores", {
     method: "POST",
@@ -37,7 +42,6 @@ export function postScore(run: RunSummary, callsign: string): Promise<{
       wpm: run.wpm,
       accuracy: run.accuracy,
       best_streak: run.bestStreak,
-      mode: run.mode,
       seed: run.seed,
     }),
   });

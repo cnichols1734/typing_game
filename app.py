@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from flask import Flask, g, jsonify, request, send_from_directory
@@ -14,7 +13,8 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "frontend" / "dist"
 
 NAME_RE = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,22}[A-Za-z]$")
-MODES = frozenset({"arcade", "daily"})
+DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+BOARD_LIMIT = 5
 
 
 def normalize_name(raw: object) -> str | None:
@@ -66,24 +66,6 @@ def create_app() -> Flask:
     def health():
         return jsonify({"ok": True, "service": "aphelion", "db": "postgres" if USING_PG else "sqlite"})
 
-    @app.route("/api/daily")
-    def daily():
-        date = utc_today()
-        db = get_db()
-        row = db.execute(
-            "SELECT date, seed FROM daily_challenges WHERE date = ?", (date,)
-        ).fetchone()
-        if row is None:
-            seed = secrets.token_hex(8)
-            db.execute(
-                "INSERT INTO daily_challenges (date, seed) VALUES (?, ?)",
-                (date, seed),
-            )
-            db.commit()
-        else:
-            seed = row["seed"]
-        return jsonify({"date": date, "seed": seed})
-
     @app.route("/api/scores", methods=["GET", "POST", "OPTIONS"])
     def scores():
         if request.method == "OPTIONS":
@@ -92,36 +74,51 @@ def create_app() -> Flask:
         db = get_db()
 
         if request.method == "GET":
-            mode = request.args.get("mode", "arcade")
-            if mode not in MODES:
-                return jsonify({"error": "invalid mode"}), 400
+            period = request.args.get("period")
+            if period is None:
+                period = "day" if request.args.get("mode") == "daily" else "all"
+            if period not in {"all", "day"}:
+                return jsonify({"error": "invalid period"}), 400
             try:
-                limit = min(50, max(1, int(request.args.get("limit", 15))))
+                limit = min(BOARD_LIMIT, max(1, int(request.args.get("limit", BOARD_LIMIT))))
             except ValueError:
                 return jsonify({"error": "invalid limit"}), 400
 
-            rows = db.execute(
-                """
+            sql = """
                 SELECT id, callsign, score, round, wpm, accuracy, best_streak,
                        mode, seed, created_at
                 FROM scores
-                WHERE mode = ?
-                ORDER BY score DESC, created_at ASC
-                LIMIT ?
-                """,
-                (mode, limit),
-            ).fetchall()
+            """
+            params: list[object] = []
+            if period == "day":
+                day = request.args.get("day", utc_today())
+                if not DAY_RE.fullmatch(day):
+                    return jsonify({"error": "invalid day"}), 400
+                try:
+                    tz_min = int(request.args.get("tz", "0"))
+                except ValueError:
+                    return jsonify({"error": "invalid tz"}), 400
+                tz_min = max(-14 * 60, min(14 * 60, tz_min))
+                start_utc = datetime.strptime(day, "%Y-%m-%d") + timedelta(minutes=tz_min)
+                end_utc = start_utc + timedelta(days=1)
+                sql += " WHERE created_at >= ? AND created_at < ?"
+                params.extend(
+                    [
+                        start_utc.strftime("%Y-%m-%d %H:%M:%S"),
+                        end_utc.strftime("%Y-%m-%d %H:%M:%S"),
+                    ]
+                )
+            sql += " ORDER BY score DESC, created_at ASC LIMIT ?"
+            params.append(limit)
+            rows = db.execute(sql, params).fetchall()
             return jsonify({"scores": [dict(r) for r in rows]})
 
         body = request.get_json(silent=True) or {}
         callsign = normalize_name(body.get("callsign", ""))
-        mode = str(body.get("mode", "")).strip()
         seed = str(body.get("seed", "")).strip()[:64]
 
         if not callsign:
             return jsonify({"error": "name must be 2–24 letters"}), 400
-        if mode not in MODES:
-            return jsonify({"error": "invalid mode"}), 400
 
         try:
             score = int(body["score"])
@@ -143,22 +140,6 @@ def create_app() -> Flask:
         if not (0 <= best_streak <= 9999):
             return jsonify({"error": "streak out of range"}), 400
 
-        today = utc_today()
-        if mode == "daily":
-            existing = db.execute(
-                """
-                SELECT id, score FROM scores
-                WHERE mode = 'daily' AND LOWER(callsign) = LOWER(?) AND created_at LIKE ?
-                """,
-                (callsign, f"{today}%"),
-            ).fetchone()
-            if existing and score <= existing["score"]:
-                return jsonify(
-                    {"ok": True, "kept": True, "id": existing["id"], "score": existing["score"]}
-                )
-            if existing:
-                db.execute("DELETE FROM scores WHERE id = ?", (existing["id"],))
-
         new_id = insert_score(
             db,
             (
@@ -168,12 +149,12 @@ def create_app() -> Flask:
                 round(wpm, 1),
                 round(accuracy, 4),
                 best_streak,
-                mode,
+                "arcade",
                 seed or None,
                 utc_now(),
             ),
         )
-        return jsonify({"ok": True, "id": new_id, "kept": False})
+        return jsonify({"ok": True, "id": new_id})
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

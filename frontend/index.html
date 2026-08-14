@@ -93,24 +93,22 @@
             </div>
           </div>
           <div class="actions">
-            <button id="btn-arcade" class="btn primary" type="button">Arcade</button>
-            <button id="btn-daily" class="btn" type="button">Daily</button>
+            <button id="btn-play" class="btn primary" type="button">Play</button>
           </div>
           <div class="menu-meta">
             <button id="btn-music" class="btn ghost" type="button">Music on</button>
-            <p id="daily-label" class="daily-label"></p>
           </div>
         </div>
         <aside id="board-preview" class="board">
           <h2>Fire control</h2>
           <div class="board-split">
             <section>
-              <h3>Arcade</h3>
-              <ol id="board-arcade" class="board-list"></ol>
+              <h3>All time</h3>
+              <ol id="board-alltime" class="board-list"></ol>
             </section>
             <section>
-              <h3>Daily</h3>
-              <ol id="board-daily" class="board-list"></ol>
+              <h3>Today</h3>
+              <ol id="board-today" class="board-list"></ol>
             </section>
           </div>
         </aside>
@@ -158,8 +156,16 @@
             <button class="btn primary" type="submit" id="btn-submit">Post to board</button>
           </form>
           <p id="submit-note" class="note"></p>
-          <h3 id="results-board-label">Arcade</h3>
-          <ol id="results-board" class="board-list"></ol>
+          <div class="board-split">
+            <section>
+              <h3>All time</h3>
+              <ol id="results-alltime" class="board-list"></ol>
+            </section>
+            <section>
+              <h3>Today</h3>
+              <ol id="results-today" class="board-list"></ol>
+            </section>
+          </div>
           <div class="actions">
             <button id="btn-again" class="btn primary" type="button">Again</button>
             <button id="btn-menu" class="btn" type="button">Menu</button>

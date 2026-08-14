@@ -458,6 +458,10 @@ h2 {
   gap: 12px;
 }
 
+#btn-play {
+  min-width: 10rem;
+}
+
 .btn {
   appearance: none;
   border: 1px solid var(--line);
@@ -527,7 +531,7 @@ h2 {
 }
 
 .board h3,
-#results-board-label {
+.board-split h3 {
   margin: 0 0 10px;
   font-family: var(--font-display);
   font-size: 0.78rem;

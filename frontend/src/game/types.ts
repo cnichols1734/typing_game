@@ -1,4 +1,6 @@
-export type Mode = "arcade" | "daily";
+export type Mode = "arcade";
+
+export type ScorePeriod = "all" | "day";
 
 export type Hull = "fighter" | "cruiser" | "dreadnought" | "capital" | "supply";
 
@@ -36,12 +38,8 @@ export type ScoreRow = {
   wpm: number;
   accuracy: number;
   best_streak: number;
-  mode: Mode;
+  mode: string;
   seed: string | null;
   created_at: string;
 };
 
-export type DailyInfo = {
-  date: string;
-  seed: string;
-};
