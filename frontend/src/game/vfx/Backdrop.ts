@@ -32,7 +32,7 @@ export class Backdrop {
       this.stars.push({ img, speed: 26 + layer * 46 });
     }
 
-    const size = Math.min(w, h) * 0.4;
+    const size = Math.min(w, h) * (w < 820 ? 0.28 : 0.4);
     const planet = scene.add.image(w * 0.86, h * 0.1, "planet").setDepth(1);
     planet.setDisplaySize(size, size);
     planet.setAlpha(0.82);

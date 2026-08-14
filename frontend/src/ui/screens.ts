@@ -6,6 +6,7 @@ import { randomSeed } from "../game/systems/rng";
 import type { Mode, RunSummary, ScoreRow } from "../game/types";
 import { PlayScene } from "../game/scenes/PlayScene";
 import { hideHud } from "./hud";
+import { setKeyboard } from "./keyboard";
 import { wordLayer } from "./layer";
 
 function $(id: string): HTMLElement {
@@ -106,6 +107,7 @@ export function mountShell(game: Phaser.Game): void {
     show(menu, false);
     show(results, false);
     show(pause, false);
+    setKeyboard(true);
     wordLayer.clear();
     if (game.scene.isActive("menu")) game.scene.stop("menu");
     if (game.scene.isActive("play")) game.scene.stop("play");
@@ -129,6 +131,7 @@ export function mountShell(game: Phaser.Game): void {
 
   const toMenu = () => {
     hideHud();
+    setKeyboard(false);
     wordLayer.clear();
     show(results, false);
     show(pause, false);
@@ -154,6 +157,7 @@ export function mountShell(game: Phaser.Game): void {
   bus.on("gameover", (run) => {
     lastRun = run;
     hideHud();
+    setKeyboard(false);
     wordLayer.clear();
     if (game.scene.isActive("play")) game.scene.stop("play");
     if (!game.scene.isActive("menu")) game.scene.start("menu");

@@ -1,5 +1,6 @@
 import { bus } from "../game/systems/bus";
 import { POWER_LINE, SALVO_MAX } from "../game/systems/copy";
+import { isPhone } from "../game/systems/layout";
 import type { HudState } from "../game/types";
 
 function pad(n: number): string {
@@ -52,7 +53,8 @@ export function mountHud(): void {
     for (const p of s.powers) {
       const chip = document.createElement("span");
       chip.className = "power-chip";
-      chip.textContent = p.remain >= 30 ? POWER_LINE[p.id] : `${POWER_LINE[p.id]} · ${Math.ceil(p.remain)}s`;
+      const name = isPhone() ? p.id.toUpperCase() : POWER_LINE[p.id];
+      chip.textContent = p.remain >= 30 ? name : `${name} · ${Math.ceil(p.remain)}s`;
       powers.appendChild(chip);
     }
   });

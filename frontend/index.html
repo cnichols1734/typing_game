@@ -2,7 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#140f0b" />
     <title>APHELION — Orbital Defense</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,7 +41,7 @@
             <span id="hud-streak" class="v">0</span>
           </div>
           <div class="telem salvo">
-            <span class="k">TAB · ORDNANCE</span>
+            <span class="k"><span class="desk-only">TAB · </span>ORDNANCE</span>
             <span id="hud-salvo" class="shells"></span>
           </div>
           <div id="power-row"></div>
@@ -66,6 +72,7 @@
           <p class="eyebrow">STATION GUNLINE · OUTER MARK</p>
           <h1>APHELION</h1>
           <p class="tag">Type to lock. Fire to hold the line.</p>
+          <p class="phone-hint">Deck keys sit over the gunline. Ships stay small so inbound stays visible.</p>
           <p class="brief">
             First letter acquires a contact. Each correct key is a beam.
             Three breaches and the gunline falls.
@@ -79,7 +86,7 @@
           </dl>
           <p class="systems-note">Type the word on a drop to bring that system online. Drops are rare.</p>
           <div class="ordnance">
-            <kbd>TAB</kbd>
+            <kbd><span class="desk-only">TAB</span><span class="phone-only">ORD</span></kbd>
             <div>
               <strong>Ordnance</strong>
               <p>Detonate every contact on screen. Two charges per run. No resupply.</p>
@@ -110,13 +117,16 @@
         <div class="panel">
           <p class="eyebrow">HOLD</p>
           <h2>Paused</h2>
-          <p class="brief">Esc resumes. Tab detonates every contact — two charges, no resupply.</p>
+          <p class="brief desk-only">Esc resumes. Tab detonates every contact — two charges, no resupply.</p>
+          <p class="brief phone-only">HOLD resumes. ORDNANCE detonates every contact — two charges, no resupply.</p>
           <div class="actions">
             <button id="btn-resume" class="btn primary" type="button">Resume</button>
             <button id="btn-abort" class="btn" type="button">Abort run</button>
           </div>
         </div>
       </section>
+
+      <div id="deck-keys" hidden aria-label="Deck keys"></div>
 
       <section id="screen-results" class="screen hidden">
         <div class="panel results">

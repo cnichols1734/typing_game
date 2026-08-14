@@ -31,6 +31,7 @@ body,
   margin: 0;
   width: 100%;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -39,6 +40,17 @@ body {
   color: var(--metal);
   font-family: var(--font-telem);
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+.phone-only {
+  display: none;
+}
+
+.phone-hint {
+  display: none;
 }
 
 #game canvas {
@@ -648,6 +660,79 @@ h2 {
   font-size: 0.9rem;
 }
 
+#deck-keys {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 5px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, oklch(8% 0.02 78 / 0.04), oklch(10% 0.02 78 / 0.36));
+  box-shadow: inset 0 1px 0 oklch(74% 0.13 78 / 0.28);
+  backdrop-filter: blur(10px) saturate(0.75);
+  -webkit-backdrop-filter: blur(10px) saturate(0.75);
+}
+
+#deck-keys[hidden] {
+  display: none !important;
+}
+
+.key-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.key-row.inset {
+  padding-inline: 4%;
+}
+
+.key-row.inset-more {
+  padding-inline: 11%;
+}
+
+.key {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  appearance: none;
+  border: 1px solid oklch(74% 0.13 78 / 0.22);
+  background: oklch(18% 0.03 78 / 0.26);
+  color: var(--scorch);
+  font-family: var(--font-telem);
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.key:active {
+  background: oklch(74% 0.13 78 / 0.44);
+  border-color: oklch(74% 0.13 78 / 0.72);
+  color: var(--void-deep);
+}
+
+.key.wide {
+  flex: 2.4 1 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+}
+
+.key.brass {
+  border-color: oklch(74% 0.13 78 / 0.5);
+  color: var(--brass);
+}
+
+.key.brass:active {
+  color: var(--void-deep);
+}
+
 @media (max-width: 900px) {
   .screen {
     grid-template-columns: 1fr;
@@ -674,6 +759,169 @@ h2 {
 
   .telem .v {
     font-size: 1.15rem;
+  }
+}
+
+html.phone .phone-only {
+  display: revert;
+}
+
+html.phone .desk-only {
+  display: none;
+}
+
+html.phone .phone-hint {
+  display: block;
+  margin: 10px 0 0;
+  max-width: 38ch;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  color: var(--brass);
+  line-height: 1.35;
+}
+
+html.phone #hud {
+  padding: max(8px, env(safe-area-inset-top, 0px)) 10px 0;
+  gap: 4px;
+}
+
+html.phone .hud-left,
+html.phone .hud-right {
+  gap: 12px;
+}
+
+html.phone .hud-center {
+  gap: 4px;
+}
+
+html.phone .telem .k,
+html.phone #combo-ribbon .k {
+  font-size: 0.58rem;
+}
+
+html.phone .telem .v,
+html.phone #hud-streak {
+  font-size: 0.98rem;
+}
+
+html.phone .power-chip {
+  font-size: 0.58rem;
+  padding: 2px 6px;
+}
+
+html.phone .pip {
+  width: 10px;
+  height: 6px;
+}
+
+html.phone .shell {
+  width: 8px;
+  height: 14px;
+}
+
+html.phone .word {
+  font-size: 0.95rem;
+  padding: 2px 6px 3px;
+  letter-spacing: 0.08em;
+}
+
+html.phone .word.locked {
+  font-size: 1.05rem;
+}
+
+html.phone .word.focus.locked {
+  font-size: 1.2rem;
+}
+
+html.phone #banner {
+  font-size: clamp(1.4rem, 8vw, 2.2rem);
+  top: 36%;
+}
+
+html.phone #screen-menu {
+  align-items: start;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 18px max(20px, env(safe-area-inset-bottom, 0px));
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.phone h1 {
+  font-size: 3.1rem;
+}
+
+html.phone .tag {
+  margin: 10px 0 0;
+  font-size: 1.05rem;
+}
+
+html.phone .brief {
+  margin: 10px 0 14px;
+  font-size: 0.92rem;
+}
+
+html.phone .systems {
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+html.phone .systems div {
+  grid-template-columns: 4.6rem 1fr;
+  gap: 8px;
+}
+
+html.phone .systems dt {
+  font-size: 0.7rem;
+}
+
+html.phone .systems dd {
+  font-size: 0.85rem;
+}
+
+html.phone .systems-note {
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+}
+
+html.phone .ordnance {
+  margin-bottom: 16px;
+  gap: 10px;
+}
+
+html.phone .actions .btn {
+  padding: 14px 20px;
+  min-height: 44px;
+}
+
+html.phone .menu-meta {
+  margin-top: 14px;
+}
+
+html.phone #callsign-form {
+  grid-template-columns: 1fr;
+}
+
+html.phone .stats {
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+html.phone .stats dd {
+  font-size: 1.2rem;
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .key {
+    min-height: 36px;
+    font-size: 0.9rem;
+  }
+
+  #deck-keys {
+    gap: 3px;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+  }
+
+  html.phone h1 {
+    font-size: 2.2rem;
   }
 }
 

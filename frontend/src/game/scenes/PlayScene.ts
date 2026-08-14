@@ -13,8 +13,10 @@ import { generateTextures } from "../vfx/textures";
 import { burst } from "../vfx/explosions";
 import { trueAdd } from "../vfx/blend";
 import { POWER_BANNER, SALVO_MAX } from "../systems/copy";
+import { gunshipScale, isPhone, keyboardReserve, spawnPad, stationHeight } from "../systems/layout";
 import { bossPhases, hullForWord, pickSupply, pickWord, SYSTEM_WORD } from "../words/pick";
 import { wordLayer } from "../../ui/layer";
+import { setKeyboard } from "../../ui/keyboard";
 
 export type PlayData = { mode: Mode; seed: string };
 
@@ -22,6 +24,7 @@ type TimedPower = { id: Exclude<PowerId, "aegis" | "shove">; remain: number };
 
 export class PlayScene extends Phaser.Scene {
   private world!: Backdrop;
+  private station!: Phaser.GameObjects.Image;
   private gunship!: Phaser.GameObjects.Image;
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter;
   private embers!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -98,21 +101,19 @@ export class PlayScene extends Phaser.Scene {
     this.world = new Backdrop(this);
     const w = this.scale.width;
     const h = this.scale.height;
-    this.add.image(w / 2, h - 30, "station").setDepth(3).setDisplaySize(w * 1.04, 150).setAlpha(0.98);
-    this.gunship = this.add.image(w / 2, h - 185, "gunship").setDepth(6).setScale(0.48);
+    this.station = this.add.image(w / 2, h - 30, "station").setDepth(3).setAlpha(0.98);
+    this.gunship = this.add.image(w / 2, h - 185, "gunship").setDepth(6);
     this.aegisRing = this.add.image(w / 2, h - 185, "shock").setDepth(5).setBlendMode(trueAdd(this));
     this.aegisRing.setScale(0.7).setAlpha(0).setTint(0xe8a15a);
 
-    const gw = this.gunship.displayWidth;
-    const gh = this.gunship.displayHeight;
-    for (const [ox, k] of [[0, 1], [-0.155, 0.66], [0.155, 0.66]] as [number, number][]) {
-      const f = this.add.image(this.gunship.x + gw * ox, this.gunship.y + gh * 0.4, "flame");
+    for (const [, k] of [[0, 1], [-0.155, 0.66], [0.155, 0.66]] as [number, number][]) {
+      const f = this.add.image(this.gunship.x, this.gunship.y, "flame");
       f.setOrigin(0.5, 0).setDepth(5).setBlendMode(trueAdd(this));
       this.flames.push({
         img: f,
-        ox: gw * ox,
-        sx: (gw * 0.19 * k) / 80,
-        sy: (gh * 0.8 * k) / 220,
+        ox: 0,
+        sx: 0.2 * k,
+        sy: 0.4 * k,
         phase: Math.random() * 100,
       });
     }
@@ -125,8 +126,10 @@ export class PlayScene extends Phaser.Scene {
       frequency: reducedMotion ? 80 : 16,
       blendMode: trueAdd(this),
       follow: this.gunship,
-      followOffset: { x: 0, y: gh * 0.46 },
+      followOffset: { x: 0, y: 40 },
     });
+    this.layoutDeck();
+    this.scale.on("resize", this.layoutDeck, this);
     this.engineWash.setDepth(5);
 
     this.sparks = this.add.particles(0, 0, "spark", {
@@ -173,6 +176,7 @@ export class PlayScene extends Phaser.Scene {
     window.addEventListener("keydown", this.onKey);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       window.removeEventListener("keydown", this.onKey);
+      this.scale.off("resize", this.layoutDeck, this);
       wordLayer.clear();
     });
 
@@ -188,7 +192,7 @@ export class PlayScene extends Phaser.Scene {
 
     this.gunship.x = this.scale.width / 2;
     this.gunship.y =
-      this.scale.height - 185 + (reducedMotion ? 0 : Math.sin(this.time.now / 540) * 4.5);
+      this.gunshipHome() + (reducedMotion ? 0 : Math.sin(this.time.now / 540) * (isPhone() ? 2 : 4.5));
 
     const boost = this.hasPower("surge") ? 1.45 : 1;
     for (const f of this.flames) {
@@ -224,8 +228,37 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private deckY(): number {
+    return this.scale.height - keyboardReserve();
+  }
+
+  private gunshipHome(): number {
+    return this.deckY() - (isPhone() ? 64 : 185);
+  }
+
   private gunline(): number {
-    return this.scale.height - 150;
+    return this.deckY() - (isPhone() ? 32 : 150);
+  }
+
+  private layoutDeck(): void {
+    if (!this.station || !this.gunship) return;
+    const w = this.scale.width;
+    const deck = this.deckY();
+    this.station.setPosition(w / 2, deck - (isPhone() ? 6 : 30));
+    this.station.setDisplaySize(w * 1.04, stationHeight());
+    this.gunship.setScale(gunshipScale());
+    this.gunship.setPosition(w / 2, this.gunshipHome());
+    const gw = this.gunship.displayWidth;
+    const gh = this.gunship.displayHeight;
+    const slots: [number, number][] = [[0, 1], [-0.155, 0.66], [0.155, 0.66]];
+    this.flames.forEach((f, i) => {
+      const [ox, k] = slots[i] ?? [0, 1];
+      f.ox = gw * ox;
+      f.sx = (gw * 0.19 * k) / 80;
+      f.sy = (gh * 0.8 * k) / 220;
+    });
+    if (this.engineWash) this.engineWash.followOffset.y = gh * 0.46;
+    this.aegisRing?.setPosition(this.gunship.x, this.gunship.y);
   }
 
   private hasPower(id: TimedPower["id"]): boolean {
@@ -295,7 +328,7 @@ export class PlayScene extends Phaser.Scene {
 
   private placeContact(word: string, hull: Contact["hull"]): void {
     this.used.add(word[0]!.toLowerCase());
-    const pad = 70;
+    const pad = spawnPad();
     const x = pad + this.rng() * Math.max(40, this.scale.width - pad * 2);
     const c = new Contact(this, x, -40, word, hull);
     this.contacts.push(c);
@@ -317,7 +350,8 @@ export class PlayScene extends Phaser.Scene {
     if (this.over || this.paused || this.transitioning) return;
     if (e.repeat) return;
     if (!/^[a-zA-Z]$/.test(e.key)) return;
-    if ((e.target as HTMLElement | null)?.closest("input, button, textarea")) return;
+    const target = e.target;
+    if (target instanceof HTMLElement && target.closest("input, textarea")) return;
     e.preventDefault();
     this.processKey(e.key.toLowerCase());
   }
@@ -593,16 +627,19 @@ export class PlayScene extends Phaser.Scene {
     this.paused = !this.paused;
     const pause = document.getElementById("screen-pause");
     pause?.classList.toggle("hidden", !this.paused);
+    setKeyboard(!this.paused);
   }
 
   resumePlay(): void {
     this.paused = false;
     document.getElementById("screen-pause")?.classList.add("hidden");
+    setKeyboard(true);
   }
 
   abortRun(): void {
     this.paused = false;
     document.getElementById("screen-pause")?.classList.add("hidden");
+    setKeyboard(false);
     this.over = true;
     setBed("idle");
     wordLayer.clear();
@@ -614,6 +651,7 @@ export class PlayScene extends Phaser.Scene {
   private endRun(): void {
     if (this.over) return;
     this.over = true;
+    setKeyboard(false);
     setBed("idle");
     const summary: RunSummary = {
       score: this.score,

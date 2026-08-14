@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { Hull } from "../types";
+import { hullScale, isPhone } from "../systems/layout";
 import { reducedMotion } from "../systems/motion";
 import { trueAdd } from "../vfx/blend";
 
@@ -71,9 +72,7 @@ export class Contact {
       ? `supply-${word.toLowerCase()}`
       : hull;
     this.sprite = scene.add.image(x, y, key).setDepth(4);
-    const scale =
-      hull === "capital" ? 0.54 : hull === "dreadnought" ? 0.48 : hull === "cruiser" ? 0.46 : hull === "supply" ? 0.42 : 0.42;
-    this.sprite.setScale(scale);
+    this.sprite.setScale(hullScale(hull));
     if (hull !== "supply") this.sprite.setRotation(Math.PI);
 
     const key2 = hull === "supply" ? "engine" : "flame";
@@ -85,7 +84,8 @@ export class Contact {
       this.flameY = (this.sprite.displayHeight * 0.68) / 220;
       this.glow.setOrigin(0.5, 0).setRotation(Math.PI).setScale(this.flameX, this.flameY);
     }
-    this.reticle = scene.add.image(x, y, "reticle").setDepth(5).setVisible(false).setScale(hull === "capital" ? 1.5 : 0.8);
+    this.reticle = scene.add.image(x, y, "reticle").setDepth(5).setVisible(false);
+    this.reticle.setScale((hull === "capital" ? 1.5 : 0.8) * (isPhone() ? 0.5 : 1));
   }
 
   get x(): number {
