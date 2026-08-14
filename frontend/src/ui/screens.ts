@@ -13,6 +13,20 @@ function $(id: string): HTMLElement {
   return document.getElementById(id)!;
 }
 
+function esc(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] ?? ch
+  ));
+}
+
+function cleanName(raw: string): string {
+  return raw.replace(/\s+/g, " ").trim().slice(0, 24);
+}
+
+function validName(name: string): boolean {
+  return /^[A-Za-z][A-Za-z '\-]{0,22}[A-Za-z]$/.test(name);
+}
+
 function show(el: HTMLElement, on: boolean): void {
   el.classList.toggle("hidden", !on);
 }
@@ -28,7 +42,7 @@ function renderBoard(list: HTMLElement, rows: ScoreRow[]): void {
   }
   rows.forEach((row, i) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span class="rank">${String(i + 1).padStart(2, "0")}</span><span class="tag3">${row.callsign}</span><span>${row.round} · ${Math.round(row.wpm)} wpm</span><span class="pts">${row.score}</span>`;
+    li.innerHTML = `<span class="rank">${String(i + 1).padStart(2, "0")}</span><span class="tag3">${esc(row.callsign)}</span><span>${row.round} · ${Math.round(row.wpm)} wpm</span><span class="pts">${row.score}</span>`;
     list.appendChild(li);
   });
 }
@@ -175,9 +189,9 @@ export function mountShell(game: Phaser.Game): void {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!lastRun) return;
-    const tag = callsign.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
-    if (tag.length !== 3) {
-      submitNote.textContent = "Three letters.";
+    const tag = cleanName(callsign.value);
+    if (!validName(tag)) {
+      submitNote.textContent = "Name, 2–24 letters.";
       return;
     }
     callsign.value = tag;

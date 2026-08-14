@@ -142,16 +142,17 @@
             <div><dt>Accuracy</dt><dd id="res-acc">0%</dd></div>
             <div><dt>Best streak</dt><dd id="res-streak">0</dd></div>
           </dl>
-          <form id="callsign-form" autocomplete="off">
-            <label for="callsign">Callsign</label>
+          <form id="callsign-form" autocomplete="nickname">
+            <label for="callsign">Name</label>
             <input
               id="callsign"
               name="callsign"
-              maxlength="3"
-              minlength="3"
-              pattern="[A-Za-z]{3}"
-              placeholder="AAA"
+              maxlength="24"
+              minlength="2"
+              pattern="[A-Za-z][A-Za-z '\-]{0,22}[A-Za-z]"
+              placeholder="Your name"
               spellcheck="false"
+              autocapitalize="words"
               required
             />
             <button class="btn primary" type="submit" id="btn-submit">Post to board</button>

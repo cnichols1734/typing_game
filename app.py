@@ -13,8 +13,15 @@ from db import USING_PG, connect, init_schema, insert_score
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "frontend" / "dist"
 
-CALLSIGN_RE = re.compile(r"^[A-Z]{3}$")
+NAME_RE = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,22}[A-Za-z]$")
 MODES = frozenset({"arcade", "daily"})
+
+
+def normalize_name(raw: object) -> str | None:
+    name = re.sub(r"\s+", " ", str(raw or "").strip())
+    if not NAME_RE.fullmatch(name):
+        return None
+    return name
 
 
 def utc_today() -> str:
@@ -107,12 +114,12 @@ def create_app() -> Flask:
             return jsonify({"scores": [dict(r) for r in rows]})
 
         body = request.get_json(silent=True) or {}
-        callsign = str(body.get("callsign", "")).upper().strip()
+        callsign = normalize_name(body.get("callsign", ""))
         mode = str(body.get("mode", "")).strip()
         seed = str(body.get("seed", "")).strip()[:64]
 
-        if not CALLSIGN_RE.match(callsign):
-            return jsonify({"error": "callsign must be 3 letters"}), 400
+        if not callsign:
+            return jsonify({"error": "name must be 2–24 letters"}), 400
         if mode not in MODES:
             return jsonify({"error": "invalid mode"}), 400
 
@@ -141,7 +148,7 @@ def create_app() -> Flask:
             existing = db.execute(
                 """
                 SELECT id, score FROM scores
-                WHERE mode = 'daily' AND callsign = ? AND created_at LIKE ?
+                WHERE mode = 'daily' AND LOWER(callsign) = LOWER(?) AND created_at LIKE ?
                 """,
                 (callsign, f"{today}%"),
             ).fetchone()

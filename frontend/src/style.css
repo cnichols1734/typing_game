@@ -547,7 +547,7 @@ h2 {
 
 .board-list li {
   display: grid;
-  grid-template-columns: 2rem 3.4rem 1fr auto;
+  grid-template-columns: 2rem minmax(4.5rem, 1.2fr) auto auto;
   gap: 10px;
   align-items: baseline;
   font-size: 1.05rem;
@@ -560,7 +560,10 @@ h2 {
 .board-list .tag3 {
   font-family: var(--font-display);
   color: var(--scorch);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .board-list .pts {
@@ -609,7 +612,7 @@ h2 {
 
 #callsign-form {
   display: grid;
-  grid-template-columns: auto 5.5rem 1fr;
+  grid-template-columns: auto minmax(10rem, 1fr) auto;
   gap: 12px;
   align-items: center;
   margin-bottom: 10px;
@@ -623,16 +626,16 @@ h2 {
 }
 
 #callsign {
-  width: 5.5rem;
+  width: 100%;
+  min-width: 0;
   background: var(--ink);
   border: 1px solid var(--line);
   color: var(--scorch);
   font-family: var(--font-display);
-  font-size: 1.4rem;
-  letter-spacing: 0.2em;
-  text-align: center;
-  text-transform: uppercase;
-  padding: 8px 6px;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  text-align: left;
+  padding: 8px 10px;
 }
 
 #callsign:focus {
