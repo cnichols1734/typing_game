@@ -1,0 +1,21 @@
+{
+  "name": "aphelion",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/three": "^0.185.4",
+    "howler": "^2.2.4",
+    "phaser": "^3.88.2",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.12",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

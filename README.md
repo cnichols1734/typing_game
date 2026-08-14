@@ -1,45 +1,44 @@
-# Space Typer
+# APHELION
 
-A ZType-inspired typing game where players control a stationary spaceship at the bottom of the screen and must type words to destroy enemy ships descending from the top.
+Orbital defense typing shooter. Lock a contact with its first letter. Each correct keystroke is a beam. Hold the gunline.
 
-## How to Play
+## Run locally
 
-1. Open `space_typer.html` in any modern web browser (Chrome, Firefox, Safari, or Edge).
-2. Click the "Start Game" button to begin.
-3. Type the words displayed on the enemy ships to destroy them.
-4. Typing the first letter of a word "locks on" to the corresponding ship.
-5. Each correct keystroke fires a laser at the targeted ship.
-6. If any ship reaches the bottom of the screen, you lose a life.
-7. Game ends when you lose all lives (starting with 3).
+Terminal 1 — API (Flask + SQLite):
 
-## Game Features
+```bash
+python3.14 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
 
-- **Progressive Difficulty**: The game gets harder as you advance through rounds.
-  - Round 1: 2-3 letter words, slow-moving ships
-  - Round 2: 3-4 letter words, slightly faster ships
-  - Round 3+: Mix of shorter words plus occasional "boss" ships with longer words (6+ letters)
+Use the same Python that created the venv (`python3.14` if `python` points at another version).
 
-- **Visual Feedback**:
-  - Laser beams connect your ship to the target when typing correctly
-  - Explosions are proportional to ship size (larger explosions for boss ships)
-  - Space-themed background with stars
-  - HUD showing score, lives, and current round
+Terminal 2 — game (Vite + Phaser):
 
-- **Word Selection**:
-  - No two ships on screen can have words starting with the same letter
-  - Words are drawn from a database of common American English words
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Technical Details
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies `/api` to Flask on port 5000.
 
-- Single HTML file with embedded JavaScript and CSS
-- Canvas-based rendering
-- No external dependencies or libraries
-- Responsive design that works on different screen sizes
+## Production
 
-## Development
+```bash
+cd frontend && npm run build
+source .venv/bin/activate
+python app.py
+```
 
-This game was created as a single HTML file with embedded JavaScript and CSS. All game assets are generated programmatically without external images.
+Flask serves `frontend/dist` and the score/daily API.
 
-## License
+Local scores use SQLite at `instance/aphelion.db`. That file is ephemeral on Railway — production should use a Railway Postgres plugin and `DATABASE_URL`. GitHub Pages is retired; the live game is the Flask app.
 
-This project is open source and available for educational purposes. 
+## Play
+
+- **Arcade** — endless waves, random seed
+- **Daily** — shared seed, one posted mark per callsign per UTC day (better score replaces)
+- Esc pauses. Three-letter callsign posts WPM, accuracy, streak, and score

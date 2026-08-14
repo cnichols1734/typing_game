@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>APHELION — Orbital Defense</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&family=Atkinson+Hyperlegible:wght@400;700&family=Tektur:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <div id="game"></div>
+      <div id="word-layer" aria-hidden="true"></div>
+      <div id="flash" aria-hidden="true"></div>
+      <div id="vignette" aria-hidden="true"></div>
+
+      <header id="hud" hidden>
+        <div class="hud-left">
+          <div class="telem">
+            <span class="k">SCORE</span>
+            <span id="hud-score" class="v brass">0</span>
+          </div>
+          <div class="telem">
+            <span class="k">MULT</span>
+            <span id="hud-mult" class="v">×1.0</span>
+          </div>
+        </div>
+        <div class="hud-center">
+          <div id="combo-ribbon">
+            <span class="k">STREAK</span>
+            <span id="hud-streak" class="v">0</span>
+          </div>
+          <div class="telem salvo">
+            <span class="k">TAB · ORDNANCE</span>
+            <span id="hud-salvo" class="shells"></span>
+          </div>
+          <div id="power-row"></div>
+        </div>
+        <div class="hud-right">
+          <div class="telem">
+            <span class="k">WPM</span>
+            <span id="hud-wpm" class="v">0</span>
+          </div>
+          <div class="telem">
+            <span class="k">WAVE</span>
+            <span id="hud-round" class="v">01</span>
+          </div>
+          <div class="telem shields">
+            <span class="k">AEGIS</span>
+            <span id="hud-shields" class="pips"></span>
+          </div>
+        </div>
+      </header>
+
+      <div id="banner" hidden>
+        <strong id="banner-title"></strong>
+        <span id="banner-sub"></span>
+      </div>
+
+      <section id="screen-menu" class="screen">
+        <div class="menu-frame">
+          <p class="eyebrow">STATION GUNLINE · OUTER MARK</p>
+          <h1>APHELION</h1>
+          <p class="tag">Type to lock. Fire to hold the line.</p>
+          <p class="brief">
+            First letter acquires a contact. Each correct key is a beam.
+            Three breaches and the gunline falls.
+          </p>
+          <dl class="systems">
+            <div><dt>HOLD</dt><dd>Inbound speed halved</dd></div>
+            <div><dt>AEGIS</dt><dd>Absorbs the next breach</dd></div>
+            <div><dt>SHOVE</dt><dd>Throws every contact back</dd></div>
+            <div><dt>SURGE</dt><dd>Score doubled, inbound hotter</dd></div>
+            <div><dt>MARK</dt><dd>Locked word magnified</dd></div>
+          </dl>
+          <p class="systems-note">Type the word on a drop to bring that system online. Drops are rare.</p>
+          <div class="ordnance">
+            <kbd>TAB</kbd>
+            <div>
+              <strong>Ordnance</strong>
+              <p>Detonate every contact on screen. Two charges per run. No resupply.</p>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="btn-arcade" class="btn primary" type="button">Arcade</button>
+            <button id="btn-daily" class="btn" type="button">Daily</button>
+          </div>
+          <div class="menu-meta">
+            <button id="btn-music" class="btn ghost" type="button">Music on</button>
+            <p id="daily-label" class="daily-label"></p>
+          </div>
+        </div>
+        <aside id="board-preview" class="board">
+          <div class="board-head">
+            <h2>Fire control</h2>
+            <div class="tabs">
+              <button class="tab on" data-board="arcade" type="button">Arcade</button>
+              <button class="tab" data-board="daily" type="button">Daily</button>
+            </div>
+          </div>
+          <ol id="board-list" class="board-list"></ol>
+        </aside>
+      </section>
+
+      <section id="screen-pause" class="screen hidden">
+        <div class="panel">
+          <p class="eyebrow">HOLD</p>
+          <h2>Paused</h2>
+          <p class="brief">Esc resumes. Tab detonates every contact — two charges, no resupply.</p>
+          <div class="actions">
+            <button id="btn-resume" class="btn primary" type="button">Resume</button>
+            <button id="btn-abort" class="btn" type="button">Abort run</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-results" class="screen hidden">
+        <div class="panel results">
+          <p class="eyebrow" id="results-eyebrow">GUNLINE BREACHED</p>
+          <h2>Run closed</h2>
+          <dl class="stats">
+            <div><dt>Score</dt><dd id="res-score">0</dd></div>
+            <div><dt>Wave</dt><dd id="res-round">1</dd></div>
+            <div><dt>WPM</dt><dd id="res-wpm">0</dd></div>
+            <div><dt>Accuracy</dt><dd id="res-acc">0%</dd></div>
+            <div><dt>Best streak</dt><dd id="res-streak">0</dd></div>
+          </dl>
+          <form id="callsign-form" autocomplete="off">
+            <label for="callsign">Callsign</label>
+            <input
+              id="callsign"
+              name="callsign"
+              maxlength="3"
+              minlength="3"
+              pattern="[A-Za-z]{3}"
+              placeholder="AAA"
+              spellcheck="false"
+              required
+            />
+            <button class="btn primary" type="submit" id="btn-submit">Post to board</button>
+          </form>
+          <p id="submit-note" class="note"></p>
+          <ol id="results-board" class="board-list"></ol>
+          <div class="actions">
+            <button id="btn-again" class="btn primary" type="button">Again</button>
+            <button id="btn-menu" class="btn" type="button">Menu</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
