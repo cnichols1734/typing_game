@@ -38,7 +38,11 @@ export class WordLayer {
       el.classList.toggle("error", c.errors > 0);
       el.classList.toggle("focus", focus && locked === c);
       el.classList.toggle("dim", focus && locked !== null && locked !== c);
-      el.style.left = `${left + c.x * scaleX}px`;
+      const x = left + c.x * scaleX;
+      const wordW = el.offsetWidth || 72;
+      const minX = wordW / 2 + 8;
+      const maxX = window.innerWidth - wordW / 2 - 8;
+      el.style.left = `${maxX > minX ? Math.min(Math.max(x, minX), maxX) : window.innerWidth / 2}px`;
       el.style.top = `${top + c.y * scaleY}px`;
     }
 

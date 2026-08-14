@@ -8,7 +8,7 @@ from pathlib import Path
 
 from flask import Flask, g, jsonify, request, send_from_directory
 
-from db import connect, init_schema, insert_score
+from db import USING_PG, connect, init_schema, insert_score
 
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "frontend" / "dist"
@@ -57,7 +57,7 @@ def create_app() -> Flask:
 
     @app.route("/api/health")
     def health():
-        return jsonify({"ok": True, "service": "aphelion"})
+        return jsonify({"ok": True, "service": "aphelion", "db": "postgres" if USING_PG else "sqlite"})
 
     @app.route("/api/daily")
     def daily():

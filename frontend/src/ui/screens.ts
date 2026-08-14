@@ -46,7 +46,8 @@ export function mountShell(game: Phaser.Game): void {
   const menu = $("screen-menu");
   const results = $("screen-results");
   const pause = $("screen-pause");
-  const boardList = $("board-list");
+  const boardArcade = $("board-arcade");
+  const boardDaily = $("board-daily");
   const resultsBoard = $("results-board");
   const dailyLabel = $("daily-label");
   const musicBtn = $("btn-music") as HTMLButtonElement;
@@ -55,7 +56,6 @@ export function mountShell(game: Phaser.Game): void {
   const submitNote = $("submit-note");
   const submitBtn = $("btn-submit") as HTMLButtonElement;
 
-  let previewMode: Mode = "arcade";
   let lastRun: RunSummary | null = null;
   let lastMode: Mode = "arcade";
   let daily: { date: string; seed: string } | null = null;
@@ -72,16 +72,13 @@ export function mountShell(game: Phaser.Game): void {
     }
   };
 
-  void loadBoard("arcade", boardList);
-  void refreshDaily();
+  const loadMenuBoards = () => {
+    void loadBoard("arcade", boardArcade);
+    void loadBoard("daily", boardDaily);
+  };
 
-  document.querySelectorAll<HTMLButtonElement>(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      previewMode = tab.dataset.board as Mode;
-      document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t === tab));
-      void loadBoard(previewMode, boardList);
-    });
-  });
+  loadMenuBoards();
+  void refreshDaily();
 
   musicBtn.textContent = isMusicOn() ? "Music on" : "Music off";
   const beginTheme = () => {
@@ -137,7 +134,7 @@ export function mountShell(game: Phaser.Game): void {
     show(pause, false);
     show(menu, true);
     if (!game.scene.isActive("menu")) game.scene.start("menu");
-    void loadBoard(previewMode, boardList);
+    loadMenuBoards();
     void refreshDaily();
     setBed("idle");
   };
@@ -167,6 +164,7 @@ export function mountShell(game: Phaser.Game): void {
     $("res-acc").textContent = `${Math.round(run.accuracy * 100)}%`;
     $("res-streak").textContent = String(run.bestStreak);
     $("results-eyebrow").textContent = run.mode === "daily" ? "DAILY CLOSED" : "GUNLINE BREACHED";
+    $("results-board-label").textContent = run.mode === "daily" ? "Daily" : "Arcade";
     submitNote.textContent = "";
     submitBtn.disabled = false;
     show(menu, false);

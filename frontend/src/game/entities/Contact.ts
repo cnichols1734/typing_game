@@ -149,6 +149,7 @@ export class Contact {
   update(dt: number, fall: number, sway: number): void {
     this.sprite.y += fall * this.speedMul * dt;
     this.sprite.x += Math.sin(this.sprite.y * 0.01 + this.sprite.x * 0.004) * sway * dt;
+    this.keepOnScreen();
 
     const hurt = this.integrity;
     const base = this.hull === "supply" ? 0 : Math.PI;
@@ -177,6 +178,15 @@ export class Contact {
 
     if (this.scene.time.now < this.flashUntil) this.sprite.setTint(0xfff4e2);
     else this.paintHull();
+  }
+
+  private keepOnScreen(): void {
+    const w = this.scene.scale.width;
+    const half = this.sprite.displayWidth * 0.5;
+    const inset = isPhone() ? 12 : 20;
+    const minX = Math.min(inset + half, w * 0.28);
+    const maxX = w - minX;
+    this.sprite.x = maxX > minX ? Phaser.Math.Clamp(this.sprite.x, minX, maxX) : w / 2;
   }
 
   destroy(): void {

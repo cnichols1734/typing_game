@@ -35,5 +35,6 @@ export function keyboardReserve(): number {
 }
 
 export function spawnPad(): number {
-  return isPhone() ? 28 : 70;
+  if (!isPhone()) return 70;
+  return Math.max(44, Math.round(window.innerWidth * 0.16));
 }
