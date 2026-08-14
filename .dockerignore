@@ -1,0 +1,13 @@
+.git
+.venv
+.idea
+.DS_Store
+instance
+frontend/node_modules
+frontend/dist
+*.pyc
+__pycache__
+index_backup.html
+index_current_backup.html
+Vector Chase Loop (1).mp3
+space_theme.mp3

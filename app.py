@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+import os
 import re
 import secrets
-import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 from flask import Flask, g, jsonify, request, send_from_directory
 
+from db import connect, init_schema, insert_score
+
 ROOT = Path(__file__).resolve().parent
-INSTANCE = ROOT / "instance"
 DIST = ROOT / "frontend" / "dist"
-DB_PATH = INSTANCE / "aphelion.db"
 
 CALLSIGN_RE = re.compile(r"^[A-Z]{3}$")
 MODES = frozenset({"arcade", "daily"})
@@ -25,43 +25,14 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
-def get_db() -> sqlite3.Connection:
+def get_db():
     if "db" not in g:
-        INSTANCE.mkdir(exist_ok=True)
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        g.db = conn
+        g.db = connect()
     return g.db
 
 
 def init_db() -> None:
-    db = get_db()
-    db.executescript(
-        """
-        CREATE TABLE IF NOT EXISTS scores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            callsign TEXT NOT NULL,
-            score INTEGER NOT NULL,
-            round INTEGER NOT NULL,
-            wpm REAL NOT NULL,
-            accuracy REAL NOT NULL,
-            best_streak INTEGER NOT NULL,
-            mode TEXT NOT NULL,
-            seed TEXT,
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS daily_challenges (
-            date TEXT PRIMARY KEY,
-            seed TEXT NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_scores_mode_score
-            ON scores (mode, score DESC, created_at ASC);
-        """
-    )
-    db.commit()
+    init_schema(get_db())
 
 
 def create_app() -> Flask:
@@ -170,9 +141,9 @@ def create_app() -> Flask:
             existing = db.execute(
                 """
                 SELECT id, score FROM scores
-                WHERE mode = 'daily' AND callsign = ? AND date(created_at) = ?
+                WHERE mode = 'daily' AND callsign = ? AND created_at LIKE ?
                 """,
-                (callsign, today),
+                (callsign, f"{today}%"),
             ).fetchone()
             if existing and score <= existing["score"]:
                 return jsonify(
@@ -181,12 +152,8 @@ def create_app() -> Flask:
             if existing:
                 db.execute("DELETE FROM scores WHERE id = ?", (existing["id"],))
 
-        cur = db.execute(
-            """
-            INSERT INTO scores (
-                callsign, score, round, wpm, accuracy, best_streak, mode, seed, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+        new_id = insert_score(
+            db,
             (
                 callsign,
                 score,
@@ -199,8 +166,7 @@ def create_app() -> Flask:
                 utc_now(),
             ),
         )
-        db.commit()
-        return jsonify({"ok": True, "id": cur.lastrowid, "kept": False})
+        return jsonify({"ok": True, "id": new_id, "kept": False})
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
@@ -236,4 +202,4 @@ def create_app() -> Flask:
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=True)

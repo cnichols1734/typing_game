@@ -35,7 +35,7 @@ python app.py
 
 Flask serves `frontend/dist` and the score/daily API.
 
-Local scores use SQLite at `instance/aphelion.db`. That file is ephemeral on Railway — production should use a Railway Postgres plugin and `DATABASE_URL`. GitHub Pages is retired; the live game is the Flask app.
+Local scores use SQLite at `instance/aphelion.db`. Production uses Railway Postgres via `DATABASE_URL`. GitHub Pages is retired; the live game is the Flask app.
 
 ## Play
 
