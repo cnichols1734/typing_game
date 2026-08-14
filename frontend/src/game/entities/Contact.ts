@@ -204,12 +204,14 @@ export class Contact {
   }
 
   private placeMark(scale: number, index: number): Mark {
+    const hull = Math.min(this.sprite.displayWidth, this.sprite.displayHeight);
     const a = hash(this.seed + index * 17) * Math.PI * 2;
-    const r = 0.1 + hash(this.seed + index * 41) * 0.32;
+    const r = 0.04 + hash(this.seed + index * 41) * 0.2;
     const ox = Math.cos(a) * this.sprite.displayWidth * r;
     const oy = Math.sin(a) * this.sprite.displayHeight * r;
     const spin = (hash(this.seed + index * 73) - 0.5) * 1.4;
-    const size = (0.22 + this.sprite.displayWidth / 520) * scale;
+    const markPx = Phaser.Math.Clamp(hull * 0.16 * scale, 8, hull * 0.24);
+    const size = markPx / 160;
 
     const crater = this.scene.add.image(this.x, this.y, "crater").setDepth(4.2);
     crater.setScale(size);
@@ -218,14 +220,14 @@ export class Contact {
 
     const glow = this.scene.add.image(this.x, this.y, "wound").setDepth(4.4);
     glow.setBlendMode(trueAdd(this.scene));
-    glow.setScale(size * 1.15);
-    glow.setAlpha(0.95);
+    glow.setScale(size);
+    glow.setAlpha(0.7);
 
     const lick = this.scene.add.image(this.x, this.y, "flame").setDepth(4.5);
     lick.setBlendMode(trueAdd(this.scene));
     lick.setOrigin(0.5, 0);
-    const lickW = (size * 28) / 80;
-    lick.setScale(lickW, (size * 70) / 220);
+    const lickW = markPx / 240;
+    lick.setScale(lickW, lickW * 1.7);
     lick.setVisible(false);
 
     const mark: Mark = { crater, glow, lick, ox, oy, spin, lickW };
@@ -233,12 +235,12 @@ export class Contact {
     this.syncMarks();
 
     if (!reducedMotion) {
-      glow.setScale(size * 1.8);
+      glow.setScale(size * 1.12);
       this.scene.tweens.add({
         targets: glow,
-        scale: size * 1.15,
-        alpha: 0.72,
-        duration: 220,
+        scale: size,
+        alpha: 0.58,
+        duration: 160,
         ease: "Expo.Out",
       });
     }
@@ -260,7 +262,7 @@ export class Contact {
         m.lick.setPosition(x, y);
         m.lick.setRotation(rot + Math.PI);
         m.lick.setAlpha(0.7 + Math.sin(t * 22 + m.oy) * 0.25);
-        m.lick.setScale(m.lickW, m.lickW * 2.6 * pulse);
+        m.lick.setScale(m.lickW, m.lickW * 1.7 * pulse);
       }
     }
   }
@@ -279,10 +281,13 @@ export class Contact {
 
   private ensureVents(): void {
     if (this.vent || reducedMotion) return;
+    const hull = Math.min(this.sprite.displayWidth, this.sprite.displayHeight);
+    const smoke = Phaser.Math.Clamp(hull / 420, 0.06, 0.22);
+    const spark = Phaser.Math.Clamp(hull / 90, 0.18, 0.45);
     this.vent = this.scene.add.particles(this.x, this.y, "smoke", {
       lifespan: 820,
-      speed: { min: 10, max: 46 },
-      scale: { start: 0.28, end: 1.05 },
+      speed: { min: 8, max: Math.max(16, hull * 0.12) },
+      scale: { start: smoke, end: smoke * 2.1 },
       alpha: { start: 0.38, end: 0 },
       rotate: { min: 0, max: 360 },
       frequency: 70,
@@ -291,8 +296,8 @@ export class Contact {
     this.vent.setDepth(4.1);
     this.fire = this.scene.add.particles(this.x, this.y, "ember", {
       lifespan: 540,
-      speed: { min: 16, max: 70 },
-      scale: { start: 0.7, end: 0 },
+      speed: { min: 10, max: Math.max(22, hull * 0.18) },
+      scale: { start: spark, end: 0 },
       alpha: { start: 0.9, end: 0 },
       frequency: 400,
       blendMode: trueAdd(this.scene),
