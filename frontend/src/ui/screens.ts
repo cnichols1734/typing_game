@@ -40,7 +40,7 @@ function renderBoard(list: HTMLElement, rows: ScoreRow[]): void {
   if (!rows.length) {
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = "No marks on the board.";
+    empty.textContent = "Awaiting first mark.";
     list.appendChild(empty);
     return;
   }

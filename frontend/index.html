@@ -23,6 +23,9 @@
       <div id="word-layer" aria-hidden="true"></div>
       <div id="flash" aria-hidden="true"></div>
       <div id="vignette" aria-hidden="true"></div>
+      <div id="chrome" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
 
       <header id="hud" hidden>
         <div class="hud-left">
@@ -73,33 +76,27 @@
           <h1>APHELION</h1>
           <p class="tag">Type to lock. Fire to hold the line.</p>
           <p class="phone-hint">Deck keys sit over the gunline. Ships stay small so inbound stays visible.</p>
-          <p class="brief">
-            First letter acquires a contact. Each correct key is a beam.
-            Three breaches and the gunline falls.
-          </p>
-          <dl class="systems">
-            <div><dt>HOLD</dt><dd>Inbound speed halved</dd></div>
-            <div><dt>AEGIS</dt><dd>Absorbs the next breach</dd></div>
-            <div><dt>SHOVE</dt><dd>Throws every contact back</dd></div>
-            <div><dt>SURGE</dt><dd>Score doubled, inbound hotter</dd></div>
-            <div><dt>MARK</dt><dd>Locked word magnified</dd></div>
-          </dl>
-          <p class="systems-note">Type the word on a drop to bring that system online. Drops are rare.</p>
-          <div class="ordnance">
-            <kbd><span class="desk-only">TAB</span><span class="phone-only">ORD</span></kbd>
-            <div>
-              <strong>Ordnance</strong>
-              <p>Detonate every contact on screen. Two charges per run. No resupply.</p>
-            </div>
+          <p class="brief">First letter locks. Each key is a beam. Three breaches and the gunline falls.</p>
+          <div class="sys-plate">
+            <ul class="sys-strip">
+              <li><strong>HOLD</strong><span>Halve inbound</span></li>
+              <li><strong>AEGIS</strong><span>Soak a breach</span></li>
+              <li><strong>SHOVE</strong><span>Throw them back</span></li>
+              <li><strong>SURGE</strong><span>Score doubled</span></li>
+              <li><strong>MARK</strong><span>Word magnified</span></li>
+            </ul>
+            <p class="sys-foot">
+              Rare drops — type the word.
+              <kbd><span class="desk-only">TAB</span><span class="phone-only">ORD</span></kbd>
+              ordnance, two charges, no resupply.
+            </p>
           </div>
           <div class="actions">
             <button id="btn-play" class="btn primary" type="button">Play</button>
-          </div>
-          <div class="menu-meta">
             <button id="btn-music" class="btn ghost" type="button">Music on</button>
           </div>
         </div>
-        <aside id="board-preview" class="board">
+        <aside id="board-preview" class="board plate">
           <h2>Fire control</h2>
           <div class="board-split">
             <section>
@@ -115,7 +112,7 @@
       </section>
 
       <section id="screen-pause" class="screen hidden">
-        <div class="panel">
+        <div class="panel plate">
           <p class="eyebrow">HOLD</p>
           <h2>Paused</h2>
           <p class="brief desk-only">Esc resumes. Tab detonates every contact — two charges, no resupply.</p>
@@ -130,7 +127,7 @@
       <div id="deck-keys" hidden aria-label="Deck keys"></div>
 
       <section id="screen-results" class="screen hidden">
-        <div class="panel results">
+        <div class="panel results plate">
           <p class="eyebrow" id="results-eyebrow">GUNLINE BREACHED</p>
           <h2>Run closed</h2>
           <dl class="stats">
