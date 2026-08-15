@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { gunshipWorldScale, isPhone, keyboardReserve } from "../systems/layout";
 import { reducedMotion } from "../systems/motion";
 import { addFleetLights, envMap, fbm, planetAtmosphere, planetMaterial } from "../vfx/forge";
+import { buildGargantua, type Gargantua } from "../vfx/gargantua";
 import { cloneHull, initFleet } from "./fleet";
 import { FxRig } from "./fx";
 import { BLOOM_LAYER } from "./layers";
@@ -44,7 +45,7 @@ function nebulaTexture(): THREE.CanvasTexture {
 }
 
 function starfield(): THREE.Mesh {
-  const geo = new THREE.SphereGeometry(90, 32, 24);
+  const geo = new THREE.SphereGeometry(160, 32, 24);
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
@@ -108,6 +109,7 @@ export class Battlefield {
   private readonly ray = new THREE.Raycaster();
   private readonly stars: THREE.Mesh;
   private readonly planet: THREE.Mesh;
+  private readonly hole: Gargantua;
   private readonly dust: THREE.Mesh[] = [];
   private readonly camBase = new THREE.Vector3();
   private readonly lookAt = new THREE.Vector3(0, 0.8, 0);
@@ -123,7 +125,7 @@ export class Battlefield {
     initFleet();
     this.gfx = createWorldRenderer(host);
     this.canvas = this.gfx.canvas;
-    this.camera = new THREE.PerspectiveCamera(30, 1, 0.2, 200);
+    this.camera = new THREE.PerspectiveCamera(30, 1, 0.2, 280);
     this.scene.environment = envMap(this.gfx.renderer);
     addFleetLights(this.scene);
 
@@ -137,6 +139,9 @@ export class Battlefield {
 
     const halo = new THREE.Mesh(new THREE.IcosahedronGeometry(8.05, isPhone() ? 2 : 3), planetAtmosphere());
     this.planet.add(halo);
+
+    this.hole = buildGargantua();
+    this.scene.add(this.hole.group);
 
     const dustTex = nebulaTexture();
     for (let i = 0; i < (isPhone() ? 2 : 4); i++) {
@@ -198,7 +203,16 @@ export class Battlefield {
     this.lookAt.set(0, isPhone() ? 1.8 : 3.0, 0);
     this.camera.lookAt(this.lookAt);
     this.layoutDeck();
-    this.planet.position.set(isPhone() ? 10 : 16, isPhone() ? 7 : 11, -30);
+    this.planet.position.set(isPhone() ? 11 : 17.5, isPhone() ? 6.4 : 10.2, -32);
+    const phone = isPhone();
+    // Pinned to the upper-left corner: the horizontal offset tracks aspect so
+    // it does not drift toward mid-screen on wide windows.
+    const aspect = w / Math.max(1, h);
+    this.hole.group.position.set(
+      (phone ? -16.0 : -18.5) * aspect,
+      phone ? 28 : 44,
+      phone ? -58 : -70,
+    );
   }
 
   layoutDeck(): void {
@@ -314,6 +328,7 @@ export class Battlefield {
     const starMat = this.stars.material as THREE.ShaderMaterial;
     starMat.uniforms.uTime!.value = t;
     this.planet.rotation.y += dt * 0.04;
+    this.hole.update(dt, this.camera);
     for (let i = 0; i < this.dust.length; i++) {
       this.dust[i]!.position.x += Math.sin(t * 0.07 + i) * dt * 0.08;
     }
@@ -360,12 +375,14 @@ export class Battlefield {
 
   render(): void {
     this.gfx.renderer.toneMappingExposure = 1.12 + this.fx.exposureKick;
+    this.hole.prerender(this.gfx.renderer, this.camera);
     this.gfx.render(this.scene, this.camera);
   }
 
   dispose(): void {
     window.removeEventListener("resize", this.onResize);
     this.fx.clear();
+    this.hole.dispose();
     this.gfx.dispose();
   }
 }

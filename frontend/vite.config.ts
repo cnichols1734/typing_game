@@ -5,7 +5,7 @@ export default defineConfig({
     port: 5173,
     host: "127.0.0.1",
     proxy: {
-      "/api": "http://127.0.0.1:5000",
+      "/api": "http://127.0.0.1:5002",
     },
   },
   build: {

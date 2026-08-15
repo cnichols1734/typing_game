@@ -40,6 +40,15 @@ const SPEC: Record<Hull | "fail", { sparks: number; embers: number; debris: numb
   fail: { sparks: 100, embers: 80, debris: 22, smoke: 30, streaks: 26, scale: 3.2, pulses: 4, kick: 0.28 },
 };
 
+function finishTex(tex: THREE.CanvasTexture): THREE.CanvasTexture {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.premultiplyAlpha = true;
+  tex.generateMipmaps = false;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  return tex;
+}
+
 function glowTex(rgb: string, size = 64): THREE.CanvasTexture {
   const c = document.createElement("canvas");
   c.width = size;
@@ -51,10 +60,7 @@ function glowTex(rgb: string, size = 64): THREE.CanvasTexture {
   g.addColorStop(1, `rgba(${rgb},0)`);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.premultiplyAlpha = true;
-  return tex;
+  return finishTex(new THREE.CanvasTexture(c));
 }
 
 function fireballTex(): THREE.CanvasTexture {
@@ -69,10 +75,10 @@ function fireballTex(): THREE.CanvasTexture {
   g.addColorStop(0, "rgba(255,255,255,1)");
   g.addColorStop(0.1, "rgba(255,246,222,0.98)");
   g.addColorStop(0.26, "rgba(255,178,86,0.9)");
-  g.addColorStop(0.46, "rgba(226,92,40,0.55)");
-  g.addColorStop(0.68, "rgba(122,40,18,0.18)");
-  g.addColorStop(0.88, "rgba(40,14,8,0.03)");
-  g.addColorStop(1, "rgba(0,0,0,0)");
+  g.addColorStop(0.46, "rgba(255,140,48,0.55)");
+  g.addColorStop(0.68, "rgba(255,90,28,0.16)");
+  g.addColorStop(0.88, "rgba(255,70,20,0)");
+  g.addColorStop(1, "rgba(255,60,16,0)");
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(mid, mid, reach, 0, Math.PI * 2);
@@ -85,17 +91,14 @@ function fireballTex(): THREE.CanvasTexture {
     const cy = mid + Math.sin(a) * r;
     const blob = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
     blob.addColorStop(0, "rgba(255,214,150,0.55)");
-    blob.addColorStop(0.5, "rgba(232,120,50,0.22)");
-    blob.addColorStop(1, "rgba(0,0,0,0)");
+    blob.addColorStop(0.5, "rgba(255,140,50,0.22)");
+    blob.addColorStop(1, "rgba(255,90,30,0)");
     ctx.fillStyle = blob;
     ctx.beginPath();
     ctx.arc(cx, cy, rad, 0, Math.PI * 2);
     ctx.fill();
   }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.premultiplyAlpha = true;
-  return tex;
+  return finishTex(new THREE.CanvasTexture(c));
 }
 
 function canvasMap(w: number, h: number, draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void): THREE.CanvasTexture {
@@ -103,10 +106,7 @@ function canvasMap(w: number, h: number, draw: (ctx: CanvasRenderingContext2D, w
   c.width = w;
   c.height = h;
   draw(c.getContext("2d")!, w, h);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.premultiplyAlpha = true;
-  return tex;
+  return finishTex(new THREE.CanvasTexture(c));
 }
 
 export function flameMap(): THREE.CanvasTexture {
@@ -204,10 +204,7 @@ function smokeTex(): THREE.CanvasTexture {
     }
   }
   ctx.putImageData(img, 0, 0);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.premultiplyAlpha = true;
-  return tex;
+  return finishTex(new THREE.CanvasTexture(c));
 }
 
 function streakTex(): THREE.CanvasTexture {
@@ -234,10 +231,7 @@ function streakTex(): THREE.CanvasTexture {
     }
   }
   ctx.putImageData(img, 0, 0);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.premultiplyAlpha = true;
-  return tex;
+  return finishTex(new THREE.CanvasTexture(c));
 }
 
 function fireballMat(hot = 1): THREE.ShaderMaterial {
@@ -245,7 +239,7 @@ function fireballMat(hot = 1): THREE.ShaderMaterial {
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    side: THREE.DoubleSide,
+    side: THREE.FrontSide,
     toneMapped: true,
     uniforms: {
       uTime: { value: 0 },
@@ -328,7 +322,7 @@ function fireballMat(hot = 1): THREE.ShaderMaterial {
         col = mix(col, plasma, core * uHot);
         col += plasma * core * core * 2.2 * uHot;
         col += gold * fres * 0.55;
-        if (a < 0.04) discard;
+        if (a < 0.12) discard;
         gl_FragColor = vec4(col * uFade, a);
       }
     `,
@@ -364,7 +358,7 @@ function shellMat(): THREE.ShaderMaterial {
         vec3 col = vec3(7.5, 4.2, 1.4) * fres;
         col += vec3(14.0, 12.0, 8.0) * pow(fres, 6.0);
         float a = fres * uFade * 0.85;
-        if (a < 0.03) discard;
+        if (a < 0.1) discard;
         gl_FragColor = vec4(col * uFade, a);
       }
     `,
@@ -382,6 +376,7 @@ function pointMat(map: THREE.Texture, color: number, size: number): THREE.Points
     depthTest: true,
     sizeAttenuation: true,
     premultipliedAlpha: true,
+    alphaTest: 0.12,
   });
 }
 
@@ -609,8 +604,8 @@ export class FxRig {
     depthWrite: false,
     premultipliedAlpha: true,
   });
-  private readonly ballGeo = new THREE.IcosahedronGeometry(1, 3);
-  private readonly shellGeo = new THREE.IcosahedronGeometry(1, 2);
+  private readonly ballGeo = new THREE.SphereGeometry(1, 20, 16);
+  private readonly shellGeo = new THREE.SphereGeometry(1, 18, 14);
   private readonly streakGeo = new THREE.PlaneGeometry(1, 1);
   private readonly streakMap = streakTex();
   private readonly sparkMat: THREE.PointsMaterial;
@@ -633,6 +628,7 @@ export class FxRig {
       depthWrite: false,
       sizeAttenuation: true,
       premultipliedAlpha: true,
+      alphaTest: 0.1,
     });
     this.fireMat = new THREE.MeshBasicMaterial({
       map: this.fireTex,
@@ -641,6 +637,7 @@ export class FxRig {
       depthWrite: false,
       side: THREE.DoubleSide,
       premultipliedAlpha: true,
+      alphaTest: 0.08,
     });
     this.flashMat = new THREE.MeshBasicMaterial({
       map: this.sparkTex,
@@ -650,6 +647,7 @@ export class FxRig {
       depthWrite: false,
       side: THREE.DoubleSide,
       premultipliedAlpha: true,
+      alphaTest: 0.08,
     });
   }
 
@@ -705,7 +703,6 @@ export class FxRig {
     this.sprite(at, this.fireMat, k * 0.48, 0.28, 1.8, 0xfff6e8, 3.6);
     this.spawnCloud(at, Math.floor(spec.sparks * phone * motion), k, this.sparkMat, 0.65, 0.2, 18);
     this.spawnCloud(at, Math.floor(spec.embers * phone * motion), k * 0.95, this.emberMat, 1.05, 1.6, 10);
-    this.spawnCloud(at, Math.floor(spec.smoke * phone * motion), k * 1.05, this.smokeMat, 1.7, -0.35, 2.1, false);
     if (!reducedMotion) this.spawnStreaks(at, Math.floor(spec.streaks * phone), k);
     if (!reducedMotion) this.spawnDebris(at, Math.floor(spec.debris * phone), k);
     if (!reducedMotion) {

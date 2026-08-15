@@ -11,12 +11,12 @@ export type { Hull };
 
 type Mark = { crater: THREE.Mesh; glow: THREE.Mesh; lick: THREE.Mesh | null; spin: number; kind: WoundKind; pulse: number };
 type Jet = { mesh: THREE.Mesh; phase: number; dead: boolean };
-type Rock = "lurch" | "shimmy" | "list" | "nod" | "kick";
+type Rock = "lurch" | "shimmy" | "list" | "settle";
 type Stall = "cough" | "die" | "surge" | "uneven";
 type WoundKind = "scorch" | "gash" | "vent" | "flare" | "hole";
 type Tint = { r: number; g: number; b: number; emit: number };
 
-const ROCKS: Rock[] = ["lurch", "shimmy", "list", "nod", "kick"];
+const ROCKS: Rock[] = ["lurch", "shimmy", "list", "settle"];
 const STALLS: Stall[] = ["cough", "die", "surge", "uneven"];
 const KINDS: WoundKind[] = ["scorch", "gash", "vent", "flare", "hole"];
 const TINTS: Tint[] = [
@@ -119,10 +119,11 @@ export class Contact {
   private readonly flashHex = pick(FLASHES);
   private readonly blotch = 0.15 + Math.random() * 0.7;
   private readonly sideBias = Math.random() < 0.45 ? (Math.random() < 0.5 ? -1 : 1) : 0;
-  private readonly spring = 16 + Math.random() * 24;
-  private readonly damp = 5.5 + Math.random() * 7;
-  private readonly limpAmp = 0.015 + Math.random() * 0.07;
-  private readonly limpRate = 1.4 + Math.random() * 5;
+  private readonly hitSide = Math.random() < 0.5 ? 1 : -1;
+  private readonly spring = 9 + Math.random() * 5;
+  private readonly damp = 9 + Math.random() * 4;
+  private readonly limpAmp = 0.01 + Math.random() * 0.028;
+  private readonly limpRate = 1.2 + Math.random() * 2.4;
   private readonly basePitch: number;
   private readonly engineDiscs: THREE.Mesh[] = [];
   private flashUntil = 0;
@@ -283,7 +284,7 @@ export class Contact {
     } else {
       const limp = reducedMotion ? 0 : Math.sin((this.world.now / 1000) * this.limpRate + this.phaseOffset) * this.limpAmp * hurt;
       this.mesh.rotation.z = Math.PI + this.yaw + this.kickZ + this.list * hurt + limp;
-      this.mesh.rotation.x = this.basePitch + this.kickX;
+      this.mesh.rotation.x = this.basePitch;
     }
 
     this.flicker += dt;
@@ -333,29 +334,20 @@ export class Contact {
 
   private recoil(): void {
     if (reducedMotion) return;
-    const s = Math.random() < 0.5 ? -1 : 1;
-    const p = 0.5 + Math.random() * 0.95;
+    const p = 0.22 + Math.random() * 0.16;
     switch (this.rock) {
       case "lurch":
-        this.velZ += s * p * 1.55;
-        this.velX += (Math.random() - 0.5) * 0.6;
-        this.sx += s * (3 + Math.random() * 8);
+        this.velZ += this.hitSide * p * 0.48;
         break;
       case "shimmy":
-        this.velZ += s * p * 0.75;
-        this.velX += s * p * 0.7;
+        this.velZ += this.hitSide * p * 0.28;
         break;
       case "list":
-        this.list = Math.max(-0.11, Math.min(0.11, this.list + s * (0.02 + Math.random() * 0.035)));
-        this.velZ += s * p * 1.0;
+        this.list = Math.max(-0.045, Math.min(0.045, this.list + this.hitSide * 0.01));
+        this.velZ += this.hitSide * p * 0.22;
         break;
-      case "nod":
-        this.velX += (Math.random() < 0.5 ? -1 : 1) * p * 1.1;
-        this.velZ += s * p * 0.25;
-        break;
-      case "kick":
-        this.velZ += s * p * 1.95;
-        this.sx += s * (5 + Math.random() * 10);
+      case "settle":
+        this.velZ += this.hitSide * p * 0.18;
         break;
     }
   }
@@ -364,11 +356,9 @@ export class Contact {
     this.velZ += -this.kickZ * this.spring * dt;
     this.velZ *= Math.exp(-this.damp * dt);
     this.kickZ += this.velZ * dt;
-    this.velX += -this.kickX * this.spring * dt;
-    this.velX *= Math.exp(-this.damp * dt);
-    this.kickX += this.velX * dt;
-    this.kickZ = Math.max(-0.26, Math.min(0.26, this.kickZ));
-    this.kickX = Math.max(-0.14, Math.min(0.14, this.kickX));
+    this.kickZ = Math.max(-0.05, Math.min(0.05, this.kickZ));
+    this.kickX = 0;
+    this.velX = 0;
   }
 
   private stepStall(dt: number, hurt: number): void {

@@ -693,10 +693,10 @@ export function planetMaterial(): THREE.ShaderMaterial {
         float wrap = ndl * 0.88 + 0.12;
         float spec = pow(max(0.0, dot(reflect(-uKey, nn), view)), 28.0) * 0.22;
         float fres = pow(1.0 - max(0.0, dot(nn, view)), 2.6);
-        vec3 col = albedo * wrap * 1.65;
-        col += cream * spec;
-        col += vec3(1.0, 0.62, 0.28) * fres * 0.45;
-        col += albedo * 0.06;
+        vec3 col = albedo * wrap * 1.05;
+        col += cream * spec * 0.55;
+        col += vec3(1.0, 0.62, 0.28) * fres * 0.22;
+        col += albedo * 0.03;
         gl_FragColor = vec4(col, 1.0);
       }
     `,
@@ -725,7 +725,7 @@ export function planetAtmosphere(): THREE.ShaderMaterial {
       varying vec3 vView;
       void main() {
         float fres = pow(1.0 - abs(dot(normalize(vN), normalize(vView))), 3.2);
-        gl_FragColor = vec4(vec3(1.0, 0.62, 0.28) * fres * 0.55, fres);
+        gl_FragColor = vec4(vec3(1.0, 0.62, 0.28) * fres * 0.22, fres);
       }
     `,
   });
