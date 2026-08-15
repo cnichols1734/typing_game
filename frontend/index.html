@@ -59,7 +59,7 @@
             <span id="hud-round" class="v">01</span>
           </div>
           <div class="telem shields">
-            <span class="k">AEGIS</span>
+            <span class="k">HULL</span>
             <span id="hud-shields" class="pips"></span>
           </div>
         </div>
@@ -72,23 +72,23 @@
 
       <section id="screen-menu" class="screen">
         <div class="menu-frame">
-          <p class="eyebrow">STATION GUNLINE · OUTER MARK</p>
+          <p class="eyebrow">ORBITAL DEFENSE</p>
           <h1>APHELION</h1>
-          <p class="tag">Type to lock. Fire to hold the line.</p>
-          <p class="phone-hint">Deck keys sit over the gunline. Ships stay small so inbound stays visible.</p>
-          <p class="brief">First letter locks. Each key is a beam. Three breaches and the gunline falls.</p>
+          <p class="tag">Lock on. Type to destroy.</p>
+          <p class="phone-hint">Keys appear below the field. Ships stay small to keep targets visible.</p>
+          <p class="brief">First letter targets a ship. Type the word to destroy it. Three get past you and it's over.</p>
           <div class="sys-plate">
             <ul class="sys-strip">
-              <li><strong>HOLD</strong><span>Halve inbound</span></li>
-              <li><strong>AEGIS</strong><span>Soak a breach</span></li>
-              <li><strong>SHOVE</strong><span>Throw them back</span></li>
-              <li><strong>SURGE</strong><span>Score doubled</span></li>
-              <li><strong>MARK</strong><span>Word magnified</span></li>
+              <li><strong>BRAKE</strong><span>Slow enemies</span></li>
+              <li><strong>AEGIS</strong><span>Absorb one hit</span></li>
+              <li><strong>REPEL</strong><span>Push them back</span></li>
+              <li><strong>SURGE</strong><span>Double points</span></li>
+              <li><strong>FOCUS</strong><span>Enlarge target</span></li>
             </ul>
             <p class="sys-foot">
-              Rare drops — type the word.
+              Supply drop each wave — type it to claim. Miss it and it drifts past.
               <kbd><span class="desk-only">TAB</span><span class="phone-only">ORD</span></kbd>
-              ordnance, two charges, no resupply.
+              ordnance — clears the field. Two shots per run.
             </p>
           </div>
           <div class="actions">
@@ -97,7 +97,7 @@
           </div>
         </div>
         <aside id="board-preview" class="board plate">
-          <h2>Fire control</h2>
+          <h2>Leaderboard</h2>
           <div class="board-split">
             <section>
               <h3>All time</h3>
@@ -113,10 +113,10 @@
 
       <section id="screen-pause" class="screen hidden">
         <div class="panel plate">
-          <p class="eyebrow">HOLD</p>
+          <p class="eyebrow">PAUSED</p>
           <h2>Paused</h2>
-          <p class="brief desk-only">Esc resumes. Tab detonates every contact — two charges, no resupply.</p>
-          <p class="brief phone-only">HOLD resumes. ORDNANCE detonates every contact — two charges, no resupply.</p>
+          <p class="brief desk-only">Esc to resume. Tab fires ordnance — clears all enemies. Two shots per run.</p>
+          <p class="brief phone-only">Tap Resume. Ordnance clears all enemies — two shots per run.</p>
           <div class="actions">
             <button id="btn-resume" class="btn primary" type="button">Resume</button>
             <button id="btn-abort" class="btn" type="button">Abort run</button>
@@ -129,7 +129,7 @@
       <section id="screen-results" class="screen hidden">
         <div class="panel results plate">
           <p class="eyebrow" id="results-eyebrow">GUNLINE BREACHED</p>
-          <h2>Run closed</h2>
+          <h2>Run Complete</h2>
           <dl class="stats">
             <div><dt>Score</dt><dd id="res-score">0</dd></div>
             <div><dt>Wave</dt><dd id="res-round">1</dd></div>

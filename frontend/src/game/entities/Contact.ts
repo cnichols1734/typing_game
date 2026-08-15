@@ -78,7 +78,7 @@ export class Contact {
     const key2 = hull === "supply" ? "engine" : "flame";
     this.glow = scene.add.image(x, y, key2).setDepth(3).setBlendMode(trueAdd(scene));
     if (hull === "supply") {
-      this.glow.setScale(0.7).setAlpha(0.8);
+      this.glow.setScale(0.85).setAlpha(0.9).setTint(0x7dff9a);
     } else {
       this.flameX = (this.sprite.displayWidth * 0.3) / 80;
       this.flameY = (this.sprite.displayHeight * 0.68) / 220;
@@ -158,7 +158,7 @@ export class Contact {
 
     if (this.hull === "supply") {
       this.glow.setPosition(this.sprite.x, this.sprite.y);
-      this.glow.setAlpha(0.55 + Math.sin(this.sprite.y * 0.08) * 0.25);
+      this.glow.setAlpha(0.62 + Math.sin(this.sprite.y * 0.08) * 0.28);
     } else {
       this.flicker += dt;
       const f = this.flicker * 34 + this.phaseOffset;
@@ -269,6 +269,11 @@ export class Contact {
 
   private paintHull(): void {
     const t = this.integrity;
+    if (this.hull === "supply") {
+      if (t < 0.02) this.sprite.clearTint();
+      else this.sprite.setTint(rgb(mix(176, 48, t), mix(232, 56, t), mix(186, 40, t)));
+      return;
+    }
     if (t < 0.02 && !this.held) {
       this.sprite.clearTint();
       return;

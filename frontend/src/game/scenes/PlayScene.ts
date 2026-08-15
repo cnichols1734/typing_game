@@ -4,7 +4,7 @@ import { sfxBoom, sfxBreach, sfxError, sfxLaser, sfxSalvo, sfxStreak, sfxSystem,
 import { bus } from "../systems/bus";
 import { maxContacts, enemySpeed, ROUND_BANNER_MS, spawnInterval, WORDS_PER_ROUND } from "../systems/difficulty";
 import { reducedMotion } from "../systems/motion";
-import { mulberry32, seedFromString, chance, type Rng } from "../systems/rng";
+import { mulberry32, seedFromString, type Rng } from "../systems/rng";
 import { streakMultiplier, Telemetry, wordPoints } from "../systems/score";
 import type { Mode, PowerId, RunSummary } from "../types";
 import { BloomPipeline } from "../vfx/BloomPipeline";
@@ -57,7 +57,6 @@ export class PlayScene extends Phaser.Scene {
   private paused = false;
   private aegis = false;
   private timed: TimedPower[] = [];
-  private granted = new Set<number>();
   private salvo = SALVO_MAX;
   private suppliesThisWave = 0;
   private telemetry = new Telemetry();
@@ -83,7 +82,6 @@ export class PlayScene extends Phaser.Scene {
     this.locked = null;
     this.used.clear();
     this.timed = [];
-    this.granted.clear();
     this.salvo = SALVO_MAX;
     this.suppliesThisWave = 0;
     this.aegis = false;
@@ -276,7 +274,8 @@ export class PlayScene extends Phaser.Scene {
     for (let i = this.contacts.length - 1; i >= 0; i--) {
       const c = this.contacts[i]!;
       c.held = this.hasPower("hold");
-      c.update(dt, fall, reducedMotion ? 0 : 10);
+      const speed = c.hull === "supply" ? fall * 0.72 : fall;
+      c.update(dt, speed, reducedMotion ? 0 : 10);
       if (c.y >= this.gunline()) {
         this.breach(c);
       }
@@ -302,17 +301,15 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
-    const supply =
+    const wantSupply =
       this.round >= 2 &&
       this.suppliesThisWave < 1 &&
-      this.wordsLeft <= WORDS_PER_ROUND - 4 &&
-      chance(this.rng, 0.045);
-    const word = supply
-      ? pickSupply(this.used, this.rng)
-      : pickWord(this.round, this.used, this.rng);
+      this.wordsLeft <= WORDS_PER_ROUND - 3;
+    const drop = wantSupply ? pickSupply(this.used, this.rng) : null;
+    const word = drop ?? pickWord(this.round, this.used, this.rng);
     if (!word) return;
-    if (supply) this.suppliesThisWave += 1;
-    this.placeContact(word, hullForWord(word, Boolean(supply && word)));
+    if (drop) this.suppliesThisWave += 1;
+    this.placeContact(word, hullForWord(word, Boolean(drop)));
   }
 
   private spawnBoss(): void {
@@ -323,7 +320,7 @@ export class PlayScene extends Phaser.Scene {
     this.contacts.push(c);
     this.wordsLeft -= 1;
     setBed("boss");
-    bus.emit("banner", { title: "CAPITAL", sub: "Three phases. Escorts inbound." });
+    bus.emit("banner", { title: "CAPITAL SHIP", sub: "Three phases. Type fast." });
   }
 
   private placeContact(word: string, hull: Contact["hull"]): void {
@@ -414,10 +411,10 @@ export class PlayScene extends Phaser.Scene {
     }
 
     if (failed) {
-      this.loseShield();
+      if (c.hull !== "supply") this.loseShield();
       burst(this, c.x, c.y, c.hull, fx, true);
       sfxBoom("fail");
-      bus.emit("flash", "hit");
+      if (c.hull !== "supply") bus.emit("flash", "hit");
     } else {
       this.score += wordPoints(c.word.length, this.streak + 1, this.hasPower("surge"));
       this.bumpStreak();
@@ -433,6 +430,10 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private breach(c: Contact): void {
+    if (c.hull === "supply") {
+      this.remove(c);
+      return;
+    }
     this.breakStreak();
     sfxBreach();
     bus.emit("flash", "hit");
@@ -462,7 +463,7 @@ export class PlayScene extends Phaser.Scene {
   private loseShield(): void {
     if (this.aegis) {
       this.aegis = false;
-      bus.emit("banner", { title: "AEGIS HELD", sub: "Breach absorbed." });
+      bus.emit("banner", { title: "AEGIS", sub: "Hit absorbed." });
       return;
     }
     this.shields -= 1;
@@ -472,15 +473,7 @@ export class PlayScene extends Phaser.Scene {
   private bumpStreak(): void {
     this.streak += 1;
     this.bestStreak = Math.max(this.bestStreak, this.streak);
-    for (const n of [8, 15, 25]) {
-      if (this.streak === n && !this.granted.has(n)) {
-        this.granted.add(n);
-        sfxStreak();
-        if (n === 8) this.grant("hold");
-        if (n === 15) this.grant("aegis");
-        if (n === 25) this.grant("shove");
-      }
-    }
+    if (this.streak === 8 || this.streak === 15 || this.streak === 25) sfxStreak();
   }
 
   private breakStreak(): void {
@@ -526,10 +519,10 @@ export class PlayScene extends Phaser.Scene {
 
   private fireSalvo(): void {
     if (this.salvo <= 0) {
-      bus.emit("banner", { title: "ORDNANCE SPENT", sub: "Two charges. No resupply." });
+      bus.emit("banner", { title: "EMPTY", sub: "Both shots spent." });
       return;
     }
-    const targets = [...this.contacts];
+    const targets = this.contacts.filter((c) => c.hull !== "supply");
     if (!targets.length) return;
 
     this.salvo -= 1;
@@ -537,7 +530,7 @@ export class PlayScene extends Phaser.Scene {
     bus.emit("flash", "ok");
     bus.emit("banner", {
       title: "ORDNANCE",
-      sub: this.salvo === 1 ? "One charge left." : "Last charge spent.",
+      sub: this.salvo === 1 ? "One shot left." : "Last shot.",
     });
 
     const wave = this.add.image(this.gunship.x, this.gunship.y - 20, "shock").setDepth(8).setBlendMode(trueAdd(this));
@@ -614,7 +607,7 @@ export class PlayScene extends Phaser.Scene {
     this.transitioning = true;
     bus.emit("banner", {
       title: first ? "WAVE 01" : `WAVE ${String(this.round).padStart(2, "0")}`,
-      sub: this.round % 3 === 0 ? "Capital on approach." : undefined,
+      sub: this.round % 3 === 0 ? "Capital ship incoming." : undefined,
     });
     this.time.delayedCall(first ? 900 : ROUND_BANNER_MS, () => {
       this.transitioning = false;

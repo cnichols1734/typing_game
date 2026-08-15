@@ -34,6 +34,7 @@ export class WordLayer {
       const next = c.word.slice(c.typed, c.typed + 1);
       const rest = c.word.slice(c.typed + 1);
       el.innerHTML = `<span class="done">${typed}</span><span class="next">${next}</span>${rest}`;
+      el.classList.toggle("supply", c.hull === "supply");
       el.classList.toggle("locked", locked === c);
       el.classList.toggle("error", c.errors > 0);
       el.classList.toggle("focus", focus && locked === c);

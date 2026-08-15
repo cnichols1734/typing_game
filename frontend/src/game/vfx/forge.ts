@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import * as THREE from "three";
+import { SUPPLY_WORDS } from "../words/banks";
 
 const SS = 2;
 
@@ -299,17 +300,21 @@ function buildCapital(): THREE.Group {
 }
 
 function buildSupply(): THREE.Group {
+  const hull = new THREE.MeshStandardMaterial({ color: 0x3f5c4a, metalness: 0.9, roughness: 0.36 });
+  const plate = new THREE.MeshStandardMaterial({ color: 0x2a4034, metalness: 0.88, roughness: 0.48 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x15241c, metalness: 0.86, roughness: 0.58 });
+  const band = new THREE.MeshStandardMaterial({ color: 0x8fb56a, metalness: 0.95, roughness: 0.28 });
   const g = new THREE.Group();
-  g.add(part(new THREE.CylinderGeometry(1.0, 1.0, 3.0, 24), HULL, 0, 0, 0, Math.PI / 2));
-  g.add(part(new THREE.TorusGeometry(1.02, 0.12, 8, 26), BRASS, 0, 0.95, 0, Math.PI / 2));
-  g.add(part(new THREE.TorusGeometry(1.02, 0.12, 8, 26), BRASS, 0, -0.95, 0, Math.PI / 2));
-  g.add(part(new THREE.CylinderGeometry(1.04, 1.04, 0.5, 24), DARK, 0, 0, 0, Math.PI / 2));
-  g.add(part(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 18), GLOW_WARM, 0, 0, 1.0, Math.PI / 2));
-  g.add(part(new THREE.TorusGeometry(0.5, 0.1, 8, 20), BRASS, 0, 0, 1.02, 0));
-  g.add(part(new THREE.BoxGeometry(2.1, 0.28, 0.2), OXIDE, 0, 1.35, 0.5));
-  g.add(part(new THREE.BoxGeometry(2.1, 0.28, 0.2), OXIDE, 0, -1.35, 0.5));
+  g.add(part(new THREE.CylinderGeometry(1.0, 1.0, 3.0, 24), hull, 0, 0, 0, Math.PI / 2));
+  g.add(part(new THREE.TorusGeometry(1.02, 0.12, 8, 26), band, 0, 0.95, 0, Math.PI / 2));
+  g.add(part(new THREE.TorusGeometry(1.02, 0.12, 8, 26), band, 0, -0.95, 0, Math.PI / 2));
+  g.add(part(new THREE.CylinderGeometry(1.04, 1.04, 0.5, 24), dark, 0, 0, 0, Math.PI / 2));
+  g.add(part(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 18), GLOW_GREEN, 0, 0, 1.0, Math.PI / 2));
+  g.add(part(new THREE.TorusGeometry(0.5, 0.1, 8, 20), band, 0, 0, 1.02, 0));
+  g.add(part(new THREE.BoxGeometry(2.1, 0.28, 0.2), plate, 0, 1.35, 0.5));
+  g.add(part(new THREE.BoxGeometry(2.1, 0.28, 0.2), plate, 0, -1.35, 0.5));
   g.add(part(new THREE.SphereGeometry(0.1, 10, 10), GLOW_GREEN, 0.7, 1.5, 0.6));
-  g.add(part(new THREE.SphereGeometry(0.1, 10, 10), GLOW_RED, -0.7, 1.5, 0.6));
+  g.add(part(new THREE.SphereGeometry(0.1, 10, 10), GLOW_GREEN, -0.7, 1.5, 0.6));
   greeble(g, 7, 1.2, -1.0, 1.0, 0.9, 91);
   return g;
 }
@@ -568,7 +573,7 @@ export function forgeFleet(phaser: Phaser.Scene): void {
   bake("capital", 600, 470, buildCapital);
 
   const pod = bake("supply", 200, 220, buildSupply);
-  for (const word of ["HOLD", "AEGIS", "SHOVE", "SURGE", "MARK"]) {
+  for (const word of SUPPLY_WORDS) {
     const key = `supply-${word.toLowerCase()}`;
     const out = document.createElement("canvas");
     out.width = pod.width;
@@ -581,7 +586,7 @@ export function forgeFleet(phaser: Phaser.Scene): void {
     ctx.lineWidth = 5;
     ctx.strokeStyle = "rgba(10,8,6,0.9)";
     ctx.strokeText(word, out.width / 2, out.height * 0.74);
-    ctx.fillStyle = "#ffe7c0";
+    ctx.fillStyle = "#b8f0c8";
     ctx.fillText(word, out.width / 2, out.height * 0.74);
     if (phaser.textures.exists(key)) phaser.textures.remove(key);
     phaser.textures.addCanvas(key, out);

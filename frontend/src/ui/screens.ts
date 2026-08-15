@@ -40,7 +40,7 @@ function renderBoard(list: HTMLElement, rows: ScoreRow[]): void {
   if (!rows.length) {
     const empty = document.createElement("li");
     empty.className = "empty";
-    empty.textContent = "Awaiting first mark.";
+    empty.textContent = "No scores yet.";
     list.appendChild(empty);
     return;
   }
@@ -170,7 +170,7 @@ export function mountShell(game: Phaser.Game): void {
     $("res-wpm").textContent = String(Math.round(run.wpm));
     $("res-acc").textContent = `${Math.round(run.accuracy * 100)}%`;
     $("res-streak").textContent = String(run.bestStreak);
-    $("results-eyebrow").textContent = "GUNLINE BREACHED";
+    $("results-eyebrow").textContent = "HULL BREACHED";
     submitNote.textContent = "";
     submitBtn.disabled = false;
     show(menu, false);
@@ -194,7 +194,7 @@ export function mountShell(game: Phaser.Game): void {
       submitNote.textContent = "Posted.";
       loadResultBoards();
     } catch (err) {
-      submitNote.textContent = err instanceof Error ? err.message : "Board rejected the mark.";
+      submitNote.textContent = err instanceof Error ? err.message : "Couldn't save score.";
       submitBtn.disabled = false;
     }
   });

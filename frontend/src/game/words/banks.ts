@@ -92,4 +92,4 @@ export const BOSS_PHASES = [
   ["quantum", "parallel", "perihelion"],
 ] as const;
 
-export const SUPPLY_WORDS = ["hold", "aegis", "shove", "surge", "mark"] as const;
+export const SUPPLY_WORDS = ["BRAKE", "AEGIS", "REPEL", "SURGE", "FOCUS"] as const;

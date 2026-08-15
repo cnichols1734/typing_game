@@ -46,7 +46,7 @@ export function mountKeyboard(): void {
   const util = document.createElement("div");
   util.className = "key-row util";
   util.appendChild(keyEl("ORDNANCE", "Tab", "wide brass"));
-  util.appendChild(keyEl("HOLD", "Escape", "wide"));
+  util.appendChild(keyEl("PAUSE", "Escape", "wide"));
   root.appendChild(util);
 
   window.addEventListener("resize", syncChrome);

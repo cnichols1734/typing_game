@@ -3,11 +3,11 @@ import type { Hull, PowerId } from "../types";
 import { BOSS_PHASES, LONG_WORDS, MEDIUM_WORDS, SHORT_WORDS, SUPPLY_WORDS } from "./banks";
 
 export const SYSTEM_WORD: Record<string, PowerId> = {
-  hold: "hold",
+  brake: "hold",
   aegis: "aegis",
-  shove: "shove",
+  repel: "shove",
   surge: "surge",
-  mark: "mark",
+  focus: "mark",
 };
 
 const ALL = [...SHORT_WORDS, ...MEDIUM_WORDS, ...LONG_WORDS];

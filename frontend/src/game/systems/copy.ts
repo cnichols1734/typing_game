@@ -1,19 +1,27 @@
 import type { PowerId } from "../types";
 
+export const POWER_NAME: Record<PowerId, string> = {
+  hold: "BRAKE",
+  aegis: "AEGIS",
+  shove: "REPEL",
+  surge: "SURGE",
+  mark: "FOCUS",
+};
+
 export const POWER_LINE: Record<PowerId, string> = {
-  hold: "HOLD · inbound speed halved",
-  aegis: "AEGIS · absorbs the next breach",
-  shove: "SHOVE · throws every contact back",
-  surge: "SURGE · score doubled, inbound hotter",
-  mark: "MARK · locked word magnified",
+  hold: "BRAKE · Enemies slowed",
+  aegis: "AEGIS · Absorbs one hit",
+  shove: "REPEL · Pushed back",
+  surge: "SURGE · Double points",
+  mark: "FOCUS · Target enlarged",
 };
 
 export const POWER_BANNER: Record<PowerId, { title: string; sub: string }> = {
-  hold: { title: "HOLD", sub: "Inbound speed halved — 5s" },
-  aegis: { title: "AEGIS", sub: "Absorbs the next breach" },
-  shove: { title: "SHOVE", sub: "Throws every contact back" },
-  surge: { title: "SURGE", sub: "Score doubled. Inbound hotter — 8s" },
-  mark: { title: "MARK", sub: "Locked word magnified — 6s" },
+  hold: { title: "BRAKE", sub: "Enemies half speed — 5s" },
+  aegis: { title: "AEGIS", sub: "Next hit absorbed" },
+  shove: { title: "REPEL", sub: "Pushed back" },
+  surge: { title: "SURGE", sub: "Double points — 8s" },
+  mark: { title: "FOCUS", sub: "Target enlarged — 6s" },
 };
 
 export const SALVO_MAX = 2;
