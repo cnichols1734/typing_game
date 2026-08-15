@@ -1,4 +1,5 @@
-import type { RunSummary, ScorePeriod, ScoreRow } from "../game/types";
+import type { PlayPlatform, RunSummary, ScorePeriod, ScoreRow } from "../game/types";
+import { playPlatform } from "../game/systems/layout";
 
 async function json<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const res = await fetch(input, init);
@@ -13,9 +14,14 @@ export function fetchHealth(): Promise<{ ok: boolean }> {
   return json("/api/health");
 }
 
-export function fetchScores(period: ScorePeriod, limit = 5): Promise<{ scores: ScoreRow[] }> {
+export function fetchScores(
+  period: ScorePeriod,
+  limit = 5,
+  platform: PlayPlatform = playPlatform(),
+): Promise<{ scores: ScoreRow[] }> {
   const params = new URLSearchParams({
     period,
+    platform,
     limit: String(limit),
   });
   if (period === "day") {
@@ -43,6 +49,7 @@ export function postScore(run: RunSummary, callsign: string): Promise<{
       accuracy: run.accuracy,
       best_streak: run.bestStreak,
       seed: run.seed,
+      platform: run.platform,
     }),
   });
 }

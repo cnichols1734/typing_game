@@ -3,6 +3,7 @@ import { fetchScores, postScore } from "../api/client";
 import { sfxUi, isMusicOn, setMusicOn, unlockAudio, setBed } from "../game/audio/audio";
 import { bus } from "../game/systems/bus";
 import { randomSeed } from "../game/systems/rng";
+import { playPlatform } from "../game/systems/layout";
 import type { RunSummary, ScorePeriod, ScoreRow } from "../game/types";
 import { PlayScene } from "../game/scenes/PlayScene";
 import { hideHud } from "./hud";
@@ -68,6 +69,9 @@ export function mountShell(game: Phaser.Game): void {
   const boardToday = $("board-today");
   const resultsAlltime = $("results-alltime");
   const resultsToday = $("results-today");
+  const laneLabel = playPlatform() === "mobile" ? "Mobile board" : "Desktop board";
+  $("board-title").textContent = laneLabel;
+  $("results-lane").textContent = laneLabel;
   const musicBtn = $("btn-music") as HTMLButtonElement;
   const form = $("callsign-form") as HTMLFormElement;
   const callsign = $("callsign") as HTMLInputElement;

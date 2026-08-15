@@ -1,5 +1,7 @@
 export type Mode = "arcade";
 
+export type PlayPlatform = "desktop" | "mobile";
+
 export type ScorePeriod = "all" | "day";
 
 export type Hull = "fighter" | "cruiser" | "dreadnought" | "capital" | "supply";
@@ -16,6 +18,7 @@ export type RunSummary = {
   bestStreak: number;
   mode: Mode;
   seed: string;
+  platform: PlayPlatform;
 };
 
 export type HudState = {
@@ -40,6 +43,7 @@ export type ScoreRow = {
   best_streak: number;
   mode: string;
   seed: string | null;
+  platform: PlayPlatform;
   created_at: string;
 };
 

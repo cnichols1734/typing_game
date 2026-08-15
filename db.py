@@ -76,6 +76,7 @@ def init_schema(db: Connection) -> None:
                 best_streak INTEGER NOT NULL,
                 mode TEXT NOT NULL,
                 seed TEXT,
+                platform TEXT NOT NULL DEFAULT 'desktop',
                 created_at TEXT NOT NULL
             )
             """
@@ -107,6 +108,7 @@ def init_schema(db: Connection) -> None:
                 best_streak INTEGER NOT NULL,
                 mode TEXT NOT NULL,
                 seed TEXT,
+                platform TEXT NOT NULL DEFAULT 'desktop',
                 created_at TEXT NOT NULL
             )
             """
@@ -125,7 +127,30 @@ def init_schema(db: Connection) -> None:
             ON scores (mode, score DESC, created_at ASC)
             """
         )
+    _ensure_platform_column(db)
+    db.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_scores_platform_score
+        ON scores (platform, score DESC, created_at ASC)
+        """
+    )
     db.commit()
+
+
+def _ensure_platform_column(db: Connection) -> None:
+    if USING_PG:
+        db.execute(
+            """
+            ALTER TABLE scores
+            ADD COLUMN IF NOT EXISTS platform TEXT NOT NULL DEFAULT 'desktop'
+            """
+        )
+        return
+    cols = {row["name"] for row in db.execute("PRAGMA table_info(scores)").fetchall()}
+    if "platform" not in cols:
+        db.execute(
+            "ALTER TABLE scores ADD COLUMN platform TEXT NOT NULL DEFAULT 'desktop'"
+        )
 
 
 def insert_score(db: Connection, values: tuple[Any, ...]) -> int:
@@ -133,8 +158,8 @@ def insert_score(db: Connection, values: tuple[Any, ...]) -> int:
         row = db.execute(
             """
             INSERT INTO scores (
-                callsign, score, round, wpm, accuracy, best_streak, mode, seed, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                callsign, score, round, wpm, accuracy, best_streak, mode, seed, platform, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """,
             values,
@@ -144,8 +169,8 @@ def insert_score(db: Connection, values: tuple[Any, ...]) -> int:
     cur = db.execute(
         """
         INSERT INTO scores (
-            callsign, score, round, wpm, accuracy, best_streak, mode, seed, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            callsign, score, round, wpm, accuracy, best_streak, mode, seed, platform, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         values,
     )

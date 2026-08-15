@@ -14,6 +14,7 @@ DIST = ROOT / "frontend" / "dist"
 
 NAME_RE = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,22}[A-Za-z]$")
 DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+PLATFORMS = {"desktop", "mobile"}
 BOARD_LIMIT = 5
 
 
@@ -30,6 +31,11 @@ def utc_today() -> str:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def parse_platform(raw: object) -> str | None:
+    value = str(raw or "").strip().lower()
+    return value if value in PLATFORMS else None
 
 
 def get_db():
@@ -84,12 +90,17 @@ def create_app() -> Flask:
             except ValueError:
                 return jsonify({"error": "invalid limit"}), 400
 
+            platform = parse_platform(request.args.get("platform"))
+            if not platform:
+                return jsonify({"error": "invalid platform"}), 400
+
             sql = """
                 SELECT id, callsign, score, round, wpm, accuracy, best_streak,
-                       mode, seed, created_at
+                       mode, seed, platform, created_at
                 FROM scores
+                WHERE platform = ?
             """
-            params: list[object] = []
+            params: list[object] = [platform]
             if period == "day":
                 day = request.args.get("day", utc_today())
                 if not DAY_RE.fullmatch(day):
@@ -101,7 +112,7 @@ def create_app() -> Flask:
                 tz_min = max(-14 * 60, min(14 * 60, tz_min))
                 start_utc = datetime.strptime(day, "%Y-%m-%d") + timedelta(minutes=tz_min)
                 end_utc = start_utc + timedelta(days=1)
-                sql += " WHERE created_at >= ? AND created_at < ?"
+                sql += " AND created_at >= ? AND created_at < ?"
                 params.extend(
                     [
                         start_utc.strftime("%Y-%m-%d %H:%M:%S"),
@@ -116,9 +127,12 @@ def create_app() -> Flask:
         body = request.get_json(silent=True) or {}
         callsign = normalize_name(body.get("callsign", ""))
         seed = str(body.get("seed", "")).strip()[:64]
+        platform = parse_platform(body.get("platform"))
 
         if not callsign:
             return jsonify({"error": "name must be 2–24 letters"}), 400
+        if not platform:
+            return jsonify({"error": "invalid platform"}), 400
 
         try:
             score = int(body["score"])
@@ -151,6 +165,7 @@ def create_app() -> Flask:
                 best_streak,
                 "arcade",
                 seed or None,
+                platform,
                 utc_now(),
             ),
         )
@@ -190,4 +205,4 @@ def create_app() -> Flask:
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5002")), debug=True)

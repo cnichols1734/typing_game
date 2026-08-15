@@ -7,14 +7,14 @@ import { maxContacts, enemySpeed, ROUND_BANNER_MS, spawnInterval, WORDS_PER_ROUN
 import { reducedMotion } from "../systems/motion";
 import { mulberry32, seedFromString, type Rng } from "../systems/rng";
 import { streakMultiplier, Telemetry, wordPoints } from "../systems/score";
-import type { Mode, PowerId, RunSummary } from "../types";
+import type { Mode, PlayPlatform, PowerId, RunSummary } from "../types";
 import { BloomPipeline } from "../vfx/BloomPipeline";
 import { Backdrop } from "../vfx/Backdrop";
 import { generateTextures } from "../vfx/textures";
 import { burst, pop } from "../vfx/explosions";
 import { trueAdd } from "../vfx/blend";
 import { POWER_BANNER, SALVO_MAX } from "../systems/copy";
-import { gunshipScale, isPhone, keyboardReserve, spawnPad, stationHeight } from "../systems/layout";
+import { gunshipScale, isPhone, keyboardReserve, playPlatform, spawnPad, stationHeight } from "../systems/layout";
 import { bossPhases, hullForWord, pickBoltLetters, pickSupply, pickWord, SYSTEM_WORD } from "../words/pick";
 import { wordLayer } from "../../ui/layer";
 import { setKeyboard } from "../../ui/keyboard";
@@ -63,6 +63,7 @@ export class PlayScene extends Phaser.Scene {
   private salvo = SALVO_MAX;
   private suppliesThisWave = 0;
   private telemetry = new Telemetry();
+  private lane: PlayPlatform = "desktop";
   private onKey = (e: KeyboardEvent) => this.handleKey(e);
   private hudAcc = 0;
 
@@ -96,6 +97,7 @@ export class PlayScene extends Phaser.Scene {
     this.paused = false;
     this.transitioning = false;
     this.telemetry = new Telemetry();
+    this.lane = playPlatform();
 
     if (!reducedMotion && this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
       this.cameras.main.setPostPipeline(BloomPipeline);
@@ -245,6 +247,14 @@ export class PlayScene extends Phaser.Scene {
     return this.deckY() - (isPhone() ? 32 : 150);
   }
 
+  private travel(): number {
+    return this.gunline() + 40;
+  }
+
+  private onPhone(): boolean {
+    return this.lane === "mobile";
+  }
+
   private layoutDeck(): void {
     if (!this.station || !this.gunship) return;
     const w = this.scale.width;
@@ -277,7 +287,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private tickContacts(dt: number): void {
-    const fall = enemySpeed(this.round) * (this.hasPower("hold") ? 0.5 : 1);
+    const fall = enemySpeed(this.round, this.travel(), this.onPhone()) * (this.hasPower("hold") ? 0.5 : 1);
     for (let i = this.contacts.length - 1; i >= 0; i--) {
       const c = this.contacts[i]!;
       c.held = this.hasPower("hold");
@@ -290,7 +300,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private tickBolts(dt: number): void {
-    const fall = enemySpeed(this.round) * 0.62 * (this.hasPower("hold") ? 0.5 : 1);
+    const fall = enemySpeed(this.round, this.travel(), this.onPhone()) * 0.62 * (this.hasPower("hold") ? 0.5 : 1);
     for (let i = this.bolts.length - 1; i >= 0; i--) {
       const b = this.bolts[i]!;
       b.update(dt, fall);
@@ -302,7 +312,7 @@ export class PlayScene extends Phaser.Scene {
     const boss = this.contacts.find((c) => c.hull === "capital");
     if (!boss || this.bolts.length) return;
     this.boltAcc += dt;
-    const wait = Math.max(1.55, (2.65 - this.round * 0.05) / (this.round > 5 ? 0.9 : 1));
+    const wait = Math.max(1.55, (2.65 - this.round * 0.05) / (this.round > 5 ? 0.9 : 1)) * (this.onPhone() ? 1.15 : 1);
     if (this.boltAcc >= wait) {
       this.boltAcc = 0;
       this.fireVolley(boss);
@@ -339,9 +349,9 @@ export class PlayScene extends Phaser.Scene {
 
   private tickSpawn(dt: number): void {
     if (this.wordsLeft <= 0) return;
-    if (this.contacts.length >= maxContacts(this.round)) return;
+    if (this.contacts.length >= maxContacts(this.round, this.onPhone())) return;
     this.spawnAcc += dt * 1000;
-    const interval = spawnInterval(this.round, this.hasPower("surge"));
+    const interval = spawnInterval(this.round, this.hasPower("surge"), this.onPhone());
     if (this.spawnAcc >= interval) {
       this.spawnAcc = 0;
       this.spawnContact();
@@ -770,6 +780,7 @@ export class PlayScene extends Phaser.Scene {
       bestStreak: this.bestStreak,
       mode: this.mode,
       seed: this.seed,
+      platform: this.lane,
     };
     this.clearBolts();
     wordLayer.clear();

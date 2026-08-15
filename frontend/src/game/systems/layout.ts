@@ -1,10 +1,14 @@
-import type { Hull } from "../types";
+import type { Hull, PlayPlatform } from "../types";
 
 export function isPhone(): boolean {
   if (typeof window === "undefined") return false;
   const narrow = window.matchMedia("(max-width: 820px)").matches;
   const coarse = window.matchMedia("(pointer: coarse)").matches && window.innerWidth < 1100;
   return narrow || coarse;
+}
+
+export function playPlatform(): PlayPlatform {
+  return isPhone() ? "mobile" : "desktop";
 }
 
 export function syncChrome(): void {
