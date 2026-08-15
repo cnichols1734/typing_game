@@ -4,6 +4,7 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import Flask, g, jsonify, request, send_from_directory
 
@@ -14,8 +15,10 @@ DIST = ROOT / "frontend" / "dist"
 
 NAME_RE = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,22}[A-Za-z]$")
 DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+TZ_NAME_RE = re.compile(r"^[A-Za-z0-9_+\-]{1,32}(?:/[A-Za-z0-9_+\-]{1,32}){0,3}$")
 PLATFORMS = {"desktop", "mobile"}
 BOARD_LIMIT = 5
+DEFAULT_TZ_NAME = "America/Chicago"
 
 
 def normalize_name(raw: object) -> str | None:
@@ -25,12 +28,46 @@ def normalize_name(raw: object) -> str | None:
     return name
 
 
-def utc_today() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-
 def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _named_tz(name: str):
+    try:
+        return ZoneInfo(name)
+    except ZoneInfoNotFoundError:
+        if name != DEFAULT_TZ_NAME:
+            try:
+                return ZoneInfo(DEFAULT_TZ_NAME)
+            except ZoneInfoNotFoundError:
+                pass
+        return timezone(timedelta(hours=-6))
+
+
+def parse_tz(raw: object):
+    value = str(raw or "").strip()
+    if not value:
+        return _named_tz(DEFAULT_TZ_NAME)
+    if re.fullmatch(r"-?\d{1,4}", value):
+        minutes = int(value)
+        minutes = max(-14 * 60, min(14 * 60, minutes))
+        return timezone(timedelta(minutes=-minutes))
+    if TZ_NAME_RE.fullmatch(value):
+        return _named_tz(value)
+    return _named_tz(DEFAULT_TZ_NAME)
+
+
+def local_today(tz) -> str:
+    return datetime.now(tz).strftime("%Y-%m-%d")
+
+
+def utc_day_bounds(day: str, tz) -> tuple[str, str]:
+    start = datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=tz)
+    end = start + timedelta(days=1)
+    return (
+        start.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        end.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+    )
 
 
 def parse_platform(raw: object) -> str | None:
@@ -102,23 +139,13 @@ def create_app() -> Flask:
             """
             params: list[object] = [platform]
             if period == "day":
-                day = request.args.get("day", utc_today())
+                tzinfo = parse_tz(request.args.get("tz"))
+                day = request.args.get("day") or local_today(tzinfo)
                 if not DAY_RE.fullmatch(day):
                     return jsonify({"error": "invalid day"}), 400
-                try:
-                    tz_min = int(request.args.get("tz", "0"))
-                except ValueError:
-                    return jsonify({"error": "invalid tz"}), 400
-                tz_min = max(-14 * 60, min(14 * 60, tz_min))
-                start_utc = datetime.strptime(day, "%Y-%m-%d") + timedelta(minutes=tz_min)
-                end_utc = start_utc + timedelta(days=1)
+                start_utc, end_utc = utc_day_bounds(day, tzinfo)
                 sql += " AND created_at >= ? AND created_at < ?"
-                params.extend(
-                    [
-                        start_utc.strftime("%Y-%m-%d %H:%M:%S"),
-                        end_utc.strftime("%Y-%m-%d %H:%M:%S"),
-                    ]
-                )
+                params.extend([start_utc, end_utc])
             sql += " ORDER BY score DESC, created_at ASC LIMIT ?"
             params.append(limit)
             rows = db.execute(sql, params).fetchall()

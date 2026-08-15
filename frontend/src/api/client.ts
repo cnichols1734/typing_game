@@ -14,6 +14,14 @@ export function fetchHealth(): Promise<{ ok: boolean }> {
   return json("/api/health");
 }
 
+function localTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Chicago";
+  } catch {
+    return "America/Chicago";
+  }
+}
+
 export function fetchScores(
   period: ScorePeriod,
   limit = 5,
@@ -29,7 +37,7 @@ export function fetchScores(
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
     params.set("day", `${now.getFullYear()}-${month}-${day}`);
-    params.set("tz", String(now.getTimezoneOffset()));
+    params.set("tz", localTimeZone());
   }
   return json(`/api/scores?${params}`);
 }

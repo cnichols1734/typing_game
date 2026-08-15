@@ -626,7 +626,7 @@ h2 {
 
 .board-list li {
   display: grid;
-  grid-template-columns: 2.6rem minmax(4.2rem, 1.3fr) 3.1rem 3.1rem 4.4rem;
+  grid-template-columns: 2.6rem minmax(4.2rem, 1.3fr) 3.1rem 3.1rem 3.4rem 4.4rem;
   gap: 8px;
   align-items: baseline;
   font-size: 1.05rem;
@@ -656,6 +656,7 @@ h2 {
 
 .board-list .wave,
 .board-list .wpm,
+.board-list .acc,
 .board-list .pts,
 .board-list .head span:nth-child(n + 3) {
   text-align: right;
@@ -866,14 +867,10 @@ html.phone .desk-only {
   display: none;
 }
 
-html.phone .phone-hint {
-  display: block;
-  margin: 10px 0 0;
-  max-width: 38ch;
-  font-size: 0.88rem;
-  letter-spacing: 0.04em;
-  color: var(--brass);
-  line-height: 1.35;
+html.phone .phone-hint,
+html.phone .brief,
+html.phone .sys-plate {
+  display: none;
 }
 
 html.phone #hud {
@@ -940,40 +937,23 @@ html.phone #banner {
 
 html.phone #screen-menu {
   align-items: start;
+  gap: 22px;
   padding: max(16px, env(safe-area-inset-top, 0px)) 18px max(20px, env(safe-area-inset-bottom, 0px));
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 html.phone h1 {
-  font-size: 3.1rem;
+  font-size: 2.6rem;
+}
+
+html.phone .eyebrow {
+  margin-bottom: 6px;
 }
 
 html.phone .tag {
-  margin: 10px 0 0;
+  margin: 8px 0 18px;
   font-size: 1.05rem;
-}
-
-html.phone .brief {
-  margin: 10px 0 14px;
-  font-size: 0.92rem;
-}
-
-html.phone .sys-plate {
-  margin-bottom: 16px;
-}
-
-html.phone .sys-strip {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-html.phone .sys-strip li {
-  padding: 8px 8px 10px;
-}
-
-html.phone .sys-foot {
-  font-size: 0.75rem;
-  padding-top: 8px;
 }
 
 html.phone .actions .btn {
@@ -999,9 +979,9 @@ html.phone .stats dd {
 }
 
 html.phone .board-list li {
-  font-size: 0.92rem;
-  gap: 6px;
-  grid-template-columns: 2rem minmax(3rem, 1fr) 2.6rem 2.6rem 3.6rem;
+  font-size: 0.86rem;
+  gap: 4px;
+  grid-template-columns: 1.9rem minmax(2.6rem, 1fr) 2.3rem 2.5rem 2.7rem 3.3rem;
 }
 
 html.phone .board-list .head {

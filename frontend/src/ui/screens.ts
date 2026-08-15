@@ -36,7 +36,7 @@ function renderBoard(list: HTMLElement, rows: ScoreRow[]): void {
   list.replaceChildren();
   const head = document.createElement("li");
   head.className = "head";
-  head.innerHTML = "<span>Rank</span><span>Name</span><span>Wave</span><span>WPM</span><span>Score</span>";
+  head.innerHTML = "<span>Rank</span><span>Name</span><span>Wave</span><span>WPM</span><span>Acc</span><span>Score</span>";
   list.appendChild(head);
   if (!rows.length) {
     const empty = document.createElement("li");
@@ -47,7 +47,7 @@ function renderBoard(list: HTMLElement, rows: ScoreRow[]): void {
   }
   rows.forEach((row, i) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span class="rank">${String(i + 1).padStart(2, "0")}</span><span class="tag3">${esc(row.callsign)}</span><span class="wave">${row.round}</span><span class="wpm">${Math.round(row.wpm)}</span><span class="pts">${row.score}</span>`;
+    li.innerHTML = `<span class="rank">${String(i + 1).padStart(2, "0")}</span><span class="tag3">${esc(row.callsign)}</span><span class="wave">${row.round}</span><span class="wpm">${Math.round(row.wpm)}</span><span class="acc">${Math.round(row.accuracy * 100)}%</span><span class="pts">${row.score}</span>`;
     list.appendChild(li);
   });
 }
