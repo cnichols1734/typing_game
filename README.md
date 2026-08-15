@@ -1,4 +1,4 @@
-# APHELION
+# Space Typer 2
 
 Orbital defense typing shooter. Lock a contact with its first letter. Each correct keystroke is a beam. Hold the gunline.
 
