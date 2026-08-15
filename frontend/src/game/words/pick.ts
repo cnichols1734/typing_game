@@ -72,12 +72,23 @@ export function pickSupply(used: Set<string>, rng: Rng): string | null {
   return open.length ? pick(rng, open) : null;
 }
 
-export function bossPhases(round: number, rng: Rng): [string, string, string] {
+const ALPHA = "abcdefghijklmnopqrstuvwxyz".split("");
+
+export function pickBoltLetters(reserved: Set<string>, rng: Rng, count = 3): string[] {
+  const open = ALPHA.filter((ch) => !reserved.has(ch));
+  const out: string[] = [];
+  while (out.length < count && open.length) {
+    const i = Math.floor(rng() * open.length);
+    out.push(open.splice(i, 1)[0]!);
+  }
+  return out;
+}
+
+export function bossPhases(round: number, rng: Rng): [string, string] {
   const set = BOSS_PHASES[Math.floor((round / 3 - 1) % BOSS_PHASES.length)]!;
-  if (rng() < 0.5) return [...set] as [string, string, string];
+  if (rng() < 0.5) return [set[0], set[1]];
   const longs = LONG_WORDS.filter((w) => w.length >= 7);
   const a = pick(rng, longs);
   const b = pick(rng, longs.filter((w) => initial(w) !== initial(a))) || a;
-  const c = pick(rng, longs.filter((w) => initial(w) !== initial(a) && initial(w) !== initial(b))) || a;
-  return [a, b, c];
+  return [a, b];
 }

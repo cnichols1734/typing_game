@@ -173,6 +173,29 @@ export function generateTextures(scene: Phaser.Scene): void {
     glow(ctx, 36, 36, 36, "255,166,84");
   });
 
+  /** Downward copper lance. Tip at the bottom. Premultiplied for additive. */
+  canvasTex(scene, "bolt", 48, 130, (ctx) => {
+    const img = ctx.createImageData(48, 130);
+    for (let y = 0; y < 130; y++) {
+      const t = y / 129;
+      const half = 3.2 + 18 * Math.pow(t, 0.65) * (1 - Math.pow(t, 3.4));
+      for (let x = 0; x < 48; x++) {
+        const d = Math.abs(x - 24) / Math.max(half, 0.001);
+        if (d >= 1) continue;
+        const body = (1 - d * d) * (0.25 + 0.75 * t);
+        const core = Math.pow(1 - d, 2.6) * Math.pow(t, 0.45);
+        const a = Math.min(1, body * 0.9 + core * 0.95);
+        if (a <= 0) continue;
+        const i = (y * 48 + x) * 4;
+        img.data[i] = 255 * a;
+        img.data[i + 1] = (72 + 150 * core + 40 * t) * a;
+        img.data[i + 2] = (28 + 70 * core) * a;
+        img.data[i + 3] = a * 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  });
+
   /** Teardrop plume, origin at the nozzle (top). Premultiplied so additive blending cannot box. */
   canvasTex(scene, "flame", 80, 220, (ctx) => {
     const img = ctx.createImageData(80, 220);

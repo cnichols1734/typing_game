@@ -1,8 +1,14 @@
+function lateGame(round: number): number {
+  return round > 5 ? 0.9 : 1;
+}
+
 export function enemySpeed(round: number): number {
-  if (round <= 3) return 28 * (1 + (round - 1) * 0.1);
-  if (round <= 7) return 28 * (1.3 + (round - 3) * 0.15);
-  if (round <= 15) return 28 * (1.9 + (round - 7) ** 0.8 * 0.18);
-  return 28 * (3.0 + (round - 15) ** 0.9 * 0.2);
+  let speed: number;
+  if (round <= 3) speed = 28 * (1 + (round - 1) * 0.1);
+  else if (round <= 7) speed = 28 * (1.3 + (round - 3) * 0.15);
+  else if (round <= 15) speed = 28 * (1.9 + (round - 7) ** 0.8 * 0.18);
+  else speed = 28 * (3.0 + (round - 15) ** 0.9 * 0.2);
+  return speed * lateGame(round);
 }
 
 export function spawnInterval(round: number, surge: boolean): number {
@@ -11,6 +17,7 @@ export function spawnInterval(round: number, surge: boolean): number {
   else if (round <= 7) ms = 2000 - 450 - (round - 3) * 180;
   else if (round <= 15) ms = Math.max(900, 2000 - 1170 - (round - 7) * 120);
   else ms = Math.max(520, 2000 - 2130 - (round - 15) * 80);
+  ms /= lateGame(round);
   return surge ? ms * 0.82 : ms;
 }
 

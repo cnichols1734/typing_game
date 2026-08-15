@@ -1,6 +1,7 @@
 import Phaser from "phaser";
+import { Bolt } from "../entities/Bolt";
 import { Contact } from "../entities/Contact";
-import { sfxBoom, sfxBreach, sfxError, sfxLaser, sfxSalvo, sfxStreak, sfxSystem, setBed } from "../audio/audio";
+import { sfxBoom, sfxBreach, sfxCannon, sfxError, sfxLaser, sfxPop, sfxSalvo, sfxStreak, sfxSystem, setBed } from "../audio/audio";
 import { bus } from "../systems/bus";
 import { maxContacts, enemySpeed, ROUND_BANNER_MS, spawnInterval, WORDS_PER_ROUND } from "../systems/difficulty";
 import { reducedMotion } from "../systems/motion";
@@ -10,11 +11,11 @@ import type { Mode, PowerId, RunSummary } from "../types";
 import { BloomPipeline } from "../vfx/BloomPipeline";
 import { Backdrop } from "../vfx/Backdrop";
 import { generateTextures } from "../vfx/textures";
-import { burst } from "../vfx/explosions";
+import { burst, pop } from "../vfx/explosions";
 import { trueAdd } from "../vfx/blend";
 import { POWER_BANNER, SALVO_MAX } from "../systems/copy";
 import { gunshipScale, isPhone, keyboardReserve, spawnPad, stationHeight } from "../systems/layout";
-import { bossPhases, hullForWord, pickSupply, pickWord, SYSTEM_WORD } from "../words/pick";
+import { bossPhases, hullForWord, pickBoltLetters, pickSupply, pickWord, SYSTEM_WORD } from "../words/pick";
 import { wordLayer } from "../../ui/layer";
 import { setKeyboard } from "../../ui/keyboard";
 
@@ -40,7 +41,9 @@ export class PlayScene extends Phaser.Scene {
     phase: number;
   }[] = [];
   private contacts: Contact[] = [];
+  private bolts: Bolt[] = [];
   private locked: Contact | null = null;
+  private boltAcc = 0;
   private used = new Set<string>();
   private rng!: Rng;
   private mode: Mode = "arcade";
@@ -79,7 +82,9 @@ export class PlayScene extends Phaser.Scene {
     this.bestStreak = 0;
     this.wordsLeft = WORDS_PER_ROUND;
     this.contacts = [];
+    this.bolts = [];
     this.locked = null;
+    this.boltAcc = 0;
     this.used.clear();
     this.timed = [];
     this.salvo = SALVO_MAX;
@@ -214,11 +219,13 @@ export class PlayScene extends Phaser.Scene {
     if (!this.transitioning) {
       this.tickPowers(dt);
       this.tickContacts(dt);
+      this.tickBolts(dt);
+      this.tickCapitalFire(dt);
       this.tickSpawn(dt);
       this.checkRound();
     }
 
-    wordLayer.sync(this.contacts, this.locked, this.hasPower("mark"), this.scale.width, this.scale.height);
+    wordLayer.sync(this.contacts, this.locked, this.hasPower("mark"), this.scale.width, this.scale.height, this.bolts);
     this.hudAcc += dt;
     if (this.hudAcc > 0.12) {
       this.hudAcc = 0;
@@ -282,6 +289,54 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private tickBolts(dt: number): void {
+    const fall = enemySpeed(this.round) * 0.62 * (this.hasPower("hold") ? 0.5 : 1);
+    for (let i = this.bolts.length - 1; i >= 0; i--) {
+      const b = this.bolts[i]!;
+      b.update(dt, fall);
+      if (b.y >= this.gunline()) this.boltBreach(b);
+    }
+  }
+
+  private tickCapitalFire(dt: number): void {
+    const boss = this.contacts.find((c) => c.hull === "capital");
+    if (!boss || this.bolts.length) return;
+    this.boltAcc += dt;
+    const wait = Math.max(1.55, (2.65 - this.round * 0.05) / (this.round > 5 ? 0.9 : 1));
+    if (this.boltAcc >= wait) {
+      this.boltAcc = 0;
+      this.fireVolley(boss);
+    }
+  }
+
+  private fireVolley(boss: Contact): void {
+    const reserved = new Set(this.used);
+    if (this.locked) {
+      const next = this.locked.word[this.locked.typed]?.toLowerCase();
+      if (next) reserved.add(next);
+    }
+    const letters = pickBoltLetters(reserved, this.rng, 3);
+    if (!letters.length) return;
+
+    const muzzleX = boss.x;
+    const muzzleY = boss.y + boss.sprite.displayHeight * 0.38;
+    const flash = this.add.image(muzzleX, muzzleY, "flash").setDepth(7).setBlendMode(trueAdd(this));
+    flash.setScale(0.7).setTint(0xff7a44);
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      scale: 1.4,
+      duration: reducedMotion ? 70 : 160,
+      onComplete: () => flash.destroy(),
+    });
+    sfxCannon();
+
+    letters.forEach((letter, i) => {
+      this.used.add(letter);
+      this.bolts.push(new Bolt(this, muzzleX + (i - 1) * 14, muzzleY + 8, letter, i - 1));
+    });
+  }
+
   private tickSpawn(dt: number): void {
     if (this.wordsLeft <= 0) return;
     if (this.contacts.length >= maxContacts(this.round)) return;
@@ -319,8 +374,9 @@ export class PlayScene extends Phaser.Scene {
     const c = new Contact(this, x, -70, phases[0], "capital", [...phases]);
     this.contacts.push(c);
     this.wordsLeft -= 1;
+    this.boltAcc = 0;
     setBed("boss");
-    bus.emit("banner", { title: "CAPITAL SHIP", sub: "Three phases. Type fast." });
+    bus.emit("banner", { title: "CAPITAL SHIP", sub: "Two words. Break the incoming letters." });
   }
 
   private placeContact(word: string, hull: Contact["hull"]): void {
@@ -355,6 +411,11 @@ export class PlayScene extends Phaser.Scene {
 
   processKey(key: string): void {
     if (!this.locked) {
+      const bolt = this.bolts.find((b) => b.letter === key);
+      if (bolt) {
+        this.intercept(bolt);
+        return;
+      }
       const target = this.contacts.find((c) => c.word[0]?.toLowerCase() === key);
       if (!target) {
         this.telemetry.miss();
@@ -373,7 +434,25 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
+    const bolt = this.bolts.find((b) => b.letter === key);
+    if (bolt) {
+      this.intercept(bolt);
+      return;
+    }
+
     this.typo(this.locked);
+  }
+
+  private intercept(b: Bolt): void {
+    this.telemetry.hit();
+    sfxLaser();
+    this.beam(b);
+    this.score += wordPoints(1, this.streak + 1, this.hasPower("surge"));
+    this.bumpStreak();
+    pop(this, b.x, b.y, { sparks: this.sparks, embers: this.embers, shards: this.shards, smoke: this.smoke });
+    sfxPop();
+    this.removeBolt(b);
+    this.emitHud();
   }
 
   private hit(c: Contact): void {
@@ -453,6 +532,30 @@ export class PlayScene extends Phaser.Scene {
     this.contacts = this.contacts.filter((x) => x !== c);
   }
 
+  private boltBreach(b: Bolt): void {
+    this.breakStreak();
+    sfxBreach();
+    bus.emit("flash", "hit");
+    if (!reducedMotion) this.cameras.main.shake(140, 0.006);
+    this.loseShield();
+    this.removeBolt(b);
+  }
+
+  private removeBolt(b: Bolt): void {
+    this.used.delete(b.letter);
+    b.destroy();
+    this.bolts = this.bolts.filter((x) => x !== b);
+  }
+
+  private clearBolts(): void {
+    for (const b of this.bolts) {
+      this.used.delete(b.letter);
+      b.destroy();
+    }
+    this.bolts = [];
+    this.boltAcc = 0;
+  }
+
   private clearLock(c: Contact): void {
     if (this.locked === c) {
       c.lock(false);
@@ -490,6 +593,7 @@ export class PlayScene extends Phaser.Scene {
     if (id === "shove") {
       const lift = this.scale.height * 0.22;
       for (const c of this.contacts) c.sprite.y = Math.max(-40, c.y - lift);
+      for (const b of this.bolts) b.sprite.y = Math.max(-40, b.y - lift);
       bus.emit("banner", POWER_BANNER.shove);
       burst(this, this.gunship.x, this.gunship.y - 36, "dreadnought", {
         sparks: this.sparks,
@@ -523,7 +627,8 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
     const targets = this.contacts.filter((c) => c.hull !== "supply");
-    if (!targets.length) return;
+    const shots = [...this.bolts];
+    if (!targets.length && !shots.length) return;
 
     this.salvo -= 1;
     sfxSalvo();
@@ -557,10 +662,19 @@ export class PlayScene extends Phaser.Scene {
         this.emitHud();
       });
     });
+    shots.forEach((b, i) => {
+      this.time.delayedCall(40 * i, () => {
+        if (!this.sys.isActive() || this.over) return;
+        if (!this.bolts.includes(b)) return;
+        pop(this, b.x, b.y, fx);
+        sfxPop();
+        this.removeBolt(b);
+      });
+    });
     this.emitHud();
   }
 
-  private beam(c: Contact): void {
+  private beam(c: { x: number; y: number }): void {
     const g = this.add.graphics().setDepth(5);
     const x0 = this.gunship.x;
     const y0 = this.gunship.y - this.gunship.displayHeight * 0.46;
@@ -595,11 +709,12 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private checkRound(): void {
-    if (this.transitioning || this.wordsLeft > 0 || this.contacts.length > 0) return;
+    if (this.transitioning || this.wordsLeft > 0 || this.contacts.length > 0 || this.bolts.length > 0) return;
     this.round += 1;
     this.wordsLeft = WORDS_PER_ROUND;
     this.suppliesThisWave = 0;
     this.spawnAcc = 400;
+    this.boltAcc = 0;
     this.beginRound(false);
   }
 
@@ -607,7 +722,7 @@ export class PlayScene extends Phaser.Scene {
     this.transitioning = true;
     bus.emit("banner", {
       title: first ? "WAVE 01" : `WAVE ${String(this.round).padStart(2, "0")}`,
-      sub: this.round % 3 === 0 ? "Capital ship incoming." : undefined,
+      sub: this.round % 3 === 0 ? "Capital inbound. Intercept the letters." : undefined,
     });
     this.time.delayedCall(first ? 900 : ROUND_BANNER_MS, () => {
       this.transitioning = false;
@@ -635,6 +750,7 @@ export class PlayScene extends Phaser.Scene {
     setKeyboard(false);
     this.over = true;
     setBed("idle");
+    this.clearBolts();
     wordLayer.clear();
     this.scene.stop();
     this.scene.start("menu");
@@ -655,6 +771,7 @@ export class PlayScene extends Phaser.Scene {
       mode: this.mode,
       seed: this.seed,
     };
+    this.clearBolts();
     wordLayer.clear();
     bus.emit("gameover", summary);
   }

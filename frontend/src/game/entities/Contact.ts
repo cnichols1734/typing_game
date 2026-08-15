@@ -48,6 +48,8 @@ export class Contact {
   private readonly seed: number;
   private flameX = 1;
   private flameY = 1;
+  private flameDuty = 1;
+  private flameTimer = 0;
   private readonly phaseOffset = Math.random() * 100;
   private flicker = 0;
   private readonly marks: Mark[] = [];
@@ -132,6 +134,10 @@ export class Contact {
     this.paintHull();
     this.ensureVents();
     if (this.integrity > 0.38 && mark.lick) mark.lick.setVisible(true);
+    if (this.hull !== "supply") {
+      this.flameDuty = 0.1;
+      this.flameTimer = 0.1;
+    }
     return { x: mark.crater.x, y: mark.crater.y };
   }
 
@@ -153,21 +159,10 @@ export class Contact {
 
     const hurt = this.integrity;
     const base = this.hull === "supply" ? 0 : Math.PI;
-    const list = reducedMotion ? 0 : hurt * 0.16;
+    const list = reducedMotion ? 0 : hurt * 0.38;
     this.sprite.rotation = base + Math.sin(this.scene.time.now / 220 + this.phaseOffset) * list;
 
-    if (this.hull === "supply") {
-      this.glow.setPosition(this.sprite.x, this.sprite.y);
-      this.glow.setAlpha(0.62 + Math.sin(this.sprite.y * 0.08) * 0.28);
-    } else {
-      this.flicker += dt;
-      const f = this.flicker * 34 + this.phaseOffset;
-      const jitter = Math.sin(f) * 0.16 + Math.sin(f * 2.7) * 0.09 + Math.sin(f * 6.1) * 0.05;
-      const limp = 1 - hurt * 0.35;
-      this.glow.setPosition(this.sprite.x, this.sprite.y - this.sprite.displayHeight * 0.36);
-      this.glow.setScale(this.flameX * (1 + jitter * 0.35) * limp, this.flameY * (1 + jitter) * limp);
-      this.glow.setAlpha((0.82 + jitter * 0.5) * limp);
-    }
+    this.syncEngine(dt, hurt);
 
     this.syncMarks();
     this.reticle.setPosition(this.sprite.x, this.sprite.y);
@@ -178,6 +173,54 @@ export class Contact {
 
     if (this.scene.time.now < this.flashUntil) this.sprite.setTint(0xfff4e2);
     else this.paintHull();
+  }
+
+  private syncEngine(dt: number, hurt: number): void {
+    const rot = this.sprite.rotation;
+    if (this.hull === "supply") {
+      this.glow.setPosition(this.sprite.x, this.sprite.y);
+      this.glow.setRotation(rot);
+      this.glow.setAlpha(0.62 + Math.sin(this.sprite.y * 0.08) * 0.28);
+      return;
+    }
+
+    const aft = this.sprite.displayHeight * 0.36;
+    this.glow.setPosition(this.sprite.x - Math.sin(rot) * aft, this.sprite.y + Math.cos(rot) * aft);
+    this.glow.setRotation(rot);
+
+    this.flicker += dt;
+    const f = this.flicker * 34 + this.phaseOffset;
+    const idle = 1 + Math.sin(f) * 0.07 + Math.sin(f * 2.7) * 0.035;
+
+    if (reducedMotion) {
+      const limp = 1 - hurt * 0.55;
+      this.glow.setScale(this.flameX * limp, this.flameY * limp);
+      this.glow.setAlpha(0.32 + limp * 0.5);
+      return;
+    }
+
+    this.stepStall(dt, hurt);
+    const out = this.flameDuty;
+    this.glow.setScale(this.flameX * (0.72 + out * 0.28) * idle, this.flameY * (0.1 + out * 0.9) * idle);
+    this.glow.setAlpha(0.1 + out * 0.82);
+  }
+
+  /** Damaged nozzles cough: full plume, then a split-second drop to ~10%. */
+  private stepStall(dt: number, hurt: number): void {
+    if (hurt < 0.05) {
+      this.flameDuty = 1;
+      this.flameTimer = 0;
+      return;
+    }
+    this.flameTimer -= dt;
+    if (this.flameTimer > 0) return;
+    if (this.flameDuty > 0.5) {
+      this.flameDuty = 0.1;
+      this.flameTimer = 0.08 + Math.random() * 0.07;
+    } else {
+      this.flameDuty = 1;
+      this.flameTimer = (0.28 - hurt * 0.18) * (0.7 + Math.random() * 0.5);
+    }
   }
 
   private keepOnScreen(): void {

@@ -128,3 +128,31 @@ export function burst(
     });
   }
 }
+
+/** Single-letter intercept — a snap, not a hull kill. */
+export function pop(scene: Phaser.Scene, x: number, y: number, fx: Emitters): void {
+  const scale = 0.7 * (isPhone() ? 0.5 : 1);
+  const core = additive(scene, x, y, "fireball");
+  core.setScale(scale * 0.22).setTint(0xffc090);
+  scene.tweens.add({
+    targets: core,
+    alpha: 0,
+    scale: scale * 0.85,
+    duration: reducedMotion ? 70 : 220,
+    ease: "Expo.Out",
+    onComplete: () => core.destroy(),
+  });
+  const shock = additive(scene, x, y, "shock");
+  shock.setScale(0.06 * scale).setAlpha(0.75).setTint(0xffe2b8);
+  scene.tweens.add({
+    targets: shock,
+    alpha: 0,
+    scale: scale * 0.7,
+    duration: reducedMotion ? 80 : 200,
+    ease: "Expo.Out",
+    onComplete: () => shock.destroy(),
+  });
+  fx.sparks.emitParticleAt(x, y, isPhone() ? 8 : 14);
+  fx.embers.emitParticleAt(x, y, isPhone() ? 6 : 10);
+  if (!reducedMotion) scene.cameras.main.shake(50, 0.0024);
+}

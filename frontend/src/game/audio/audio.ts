@@ -350,6 +350,65 @@ export function sfxSalvo(): void {
   crack.start(t + 0.16);
 }
 
+export function sfxCannon(): void {
+  const ac = audioCtx();
+  const t = ac.currentTime;
+  const osc = ac.createOscillator();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(220, t);
+  osc.frequency.exponentialRampToValueAtTime(70, t + 0.22);
+  const lp = ac.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(900, t);
+  lp.frequency.exponentialRampToValueAtTime(180, t + 0.2);
+  const g = envGain(ac, 0.16, 0.004, 0.2);
+  osc.connect(lp);
+  lp.connect(g);
+  g.connect(ac.destination);
+  osc.start();
+  osc.stop(t + 0.24);
+
+  const noise = ac.createBufferSource();
+  noise.buffer = noiseBuffer(ac, 0.12);
+  const bp = ac.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(640, t);
+  bp.frequency.exponentialRampToValueAtTime(180, t + 0.14);
+  bp.Q.value = 1.6;
+  const ng = envGain(ac, 0.12, 0.003, 0.12);
+  noise.connect(bp);
+  bp.connect(ng);
+  ng.connect(ac.destination);
+  noise.start();
+  noise.stop(t + 0.14);
+}
+
+export function sfxPop(): void {
+  const ac = audioCtx();
+  const t = ac.currentTime;
+  const osc = ac.createOscillator();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(540, t);
+  osc.frequency.exponentialRampToValueAtTime(160, t + 0.08);
+  const g = envGain(ac, 0.1, 0.002, 0.07);
+  osc.connect(g);
+  g.connect(ac.destination);
+  osc.start();
+  osc.stop(t + 0.09);
+
+  const click = ac.createBufferSource();
+  click.buffer = noiseBuffer(ac, 0.03);
+  const hp = ac.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 1600;
+  const cg = envGain(ac, 0.1, 0.001, 0.03);
+  click.connect(hp);
+  hp.connect(cg);
+  cg.connect(ac.destination);
+  click.start();
+  click.stop(t + 0.04);
+}
+
 export function unlockAudio(): void {
   audioCtx();
 }
