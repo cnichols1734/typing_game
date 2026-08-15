@@ -1,11 +1,10 @@
-import Phaser from "phaser";
 import { fetchScores, postScore } from "../api/client";
 import { sfxUi, isMusicOn, setMusicOn, unlockAudio, setBed } from "../game/audio/audio";
+import type { GameApp } from "../game/app";
 import { bus } from "../game/systems/bus";
 import { randomSeed } from "../game/systems/rng";
 import { playPlatform } from "../game/systems/layout";
 import type { RunSummary, ScorePeriod, ScoreRow } from "../game/types";
-import { PlayScene } from "../game/scenes/PlayScene";
 import { hideHud } from "./hud";
 import { setKeyboard } from "./keyboard";
 import { wordLayer } from "./layer";
@@ -61,7 +60,7 @@ async function loadBoard(period: ScorePeriod, target: HTMLElement): Promise<void
   }
 }
 
-export function mountShell(game: Phaser.Game): void {
+export function mountShell(app: GameApp): void {
   const menu = $("screen-menu");
   const results = $("screen-results");
   const pause = $("screen-pause");
@@ -119,23 +118,19 @@ export function mountShell(game: Phaser.Game): void {
     show(pause, false);
     setKeyboard(true);
     wordLayer.clear();
-    if (game.scene.isActive("menu")) game.scene.stop("menu");
-    if (game.scene.isActive("play")) game.scene.stop("play");
-    game.scene.start("play", { mode: "arcade", seed: randomSeed() });
+    app.startPlay(randomSeed());
   };
 
   $("btn-play").addEventListener("click", start);
 
   $("btn-resume").addEventListener("click", () => {
     sfxUi();
-    const play = game.scene.getScene("play") as PlayScene;
-    play.resumePlay();
+    app.play?.resumePlay();
   });
 
   $("btn-abort").addEventListener("click", () => {
     sfxUi();
-    const play = game.scene.getScene("play") as PlayScene;
-    play.abortRun();
+    app.play?.abortRun();
   });
 
   const toMenu = () => {
@@ -145,7 +140,7 @@ export function mountShell(game: Phaser.Game): void {
     show(results, false);
     show(pause, false);
     show(menu, true);
-    if (!game.scene.isActive("menu")) game.scene.start("menu");
+    app.stopPlay();
     loadMenuBoards();
     setBed("idle");
   };
@@ -167,8 +162,7 @@ export function mountShell(game: Phaser.Game): void {
     hideHud();
     setKeyboard(false);
     wordLayer.clear();
-    if (game.scene.isActive("play")) game.scene.stop("play");
-    if (!game.scene.isActive("menu")) game.scene.start("menu");
+    app.stopPlay();
     $("res-score").textContent = String(run.score);
     $("res-round").textContent = String(run.round);
     $("res-wpm").textContent = String(Math.round(run.wpm));

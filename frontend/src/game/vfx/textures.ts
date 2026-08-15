@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { fbm, forgeFleet } from "./forge";
+import { fbm } from "./forge";
 
 function canvasTex(
   scene: Phaser.Scene,
@@ -46,8 +46,6 @@ function glow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, rg
 }
 
 export function generateTextures(scene: Phaser.Scene): void {
-  forgeFleet(scene);
-
   canvasTex(scene, "star", 16, 16, (ctx) => {
     glow(ctx, 8, 8, 8, "255,246,224");
   });

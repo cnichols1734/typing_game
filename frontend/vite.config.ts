@@ -13,6 +13,6 @@ export default defineConfig({
     target: "es2022",
   },
   optimizeDeps: {
-    include: ["phaser", "howler"],
+    include: ["three", "howler"],
   },
 });

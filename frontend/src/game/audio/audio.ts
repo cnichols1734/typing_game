@@ -3,7 +3,7 @@ import type { Hull } from "../types";
 
 type Bed = "idle" | "combat" | "boss";
 
-const THEME_VOL = 0.65;
+const THEME_VOL = 0.39;
 const THEME_SRC = "/audio/vector-chase-loop.mp3";
 
 let ctx: AudioContext | null = null;

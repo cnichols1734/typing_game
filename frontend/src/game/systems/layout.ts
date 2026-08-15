@@ -26,6 +26,17 @@ export function gunshipScale(): number {
   return isPhone() ? 0.16 : 0.48;
 }
 
+export function hullWorldScale(hull: Hull): number {
+  if (!isPhone()) {
+    return hull === "capital" ? 0.58 : hull === "dreadnought" ? 0.5 : hull === "cruiser" ? 0.46 : hull === "supply" ? 0.4 : 0.44;
+  }
+  return hull === "capital" ? 0.28 : hull === "dreadnought" ? 0.22 : hull === "cruiser" ? 0.2 : hull === "supply" ? 0.18 : 0.2;
+}
+
+export function gunshipWorldScale(): number {
+  return isPhone() ? 0.22 : 0.48;
+}
+
 export function stationHeight(): number {
   return isPhone() ? 64 : 150;
 }
