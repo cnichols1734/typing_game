@@ -1,4 +1,4 @@
-import { Howl } from "howler";
+import { Howl, Howler } from "howler";
 import type { Hull } from "../types";
 
 type Bed = "idle" | "combat" | "boss";
@@ -6,9 +6,24 @@ type Bed = "idle" | "combat" | "boss";
 const THEME_VOL = 0.39;
 const THEME_SRC = "/audio/vector-chase-loop.mp3";
 
+const SFX_SRC = {
+  laser: "/audio/laser-shoot.mp3",
+  large: "/audio/large-explosion.mp3",
+  medium: ["/audio/medium-explosion.mp3", "/audio/medium-explosion-2.mp3"] as const,
+  small: ["/audio/small-explosion.mp3", "/audio/small-explosion-2.mp3"] as const,
+  tab: "/audio/tab.mp3",
+};
+
 let ctx: AudioContext | null = null;
-let musicOn = true;
+let musicOn = false;
 let theme: Howl | null = null;
+let sfx: {
+  laser: Howl;
+  large: Howl;
+  medium: Howl[];
+  small: Howl[];
+  tab: Howl;
+} | null = null;
 
 function audioCtx(): AudioContext {
   if (!ctx) ctx = new AudioContext();
@@ -76,50 +91,35 @@ function noiseBuffer(ac: AudioContext, dur: number): AudioBuffer {
   return buf;
 }
 
+function cue(src: string, volume: number, pool: number): Howl {
+  return new Howl({ src: [src], volume, preload: true, pool });
+}
+
+function ensureSfx(): NonNullable<typeof sfx> {
+  if (!sfx) {
+    sfx = {
+      laser: cue(SFX_SRC.laser, 0.42, 24),
+      large: cue(SFX_SRC.large, 0.72, 4),
+      medium: SFX_SRC.medium.map((src) => cue(src, 0.58, 8)),
+      small: SFX_SRC.small.map((src) => cue(src, 0.5, 10)),
+      tab: cue(SFX_SRC.tab, 0.62, 4),
+    };
+  }
+  return sfx;
+}
+
+function playCue(howl: Howl): void {
+  audioCtx();
+  if (Howler.ctx?.state === "suspended") void Howler.ctx.resume();
+  howl.play();
+}
+
+function pickCue(bank: Howl[]): Howl {
+  return bank[Math.floor(Math.random() * bank.length)]!;
+}
+
 export function sfxLaser(): void {
-  const ac = audioCtx();
-  const t = ac.currentTime;
-
-  const click = ac.createBufferSource();
-  click.buffer = noiseBuffer(ac, 0.018);
-  const hp = ac.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 2800;
-  const cg = envGain(ac, 0.16, 0.001, 0.02);
-  click.connect(hp);
-  hp.connect(cg);
-  cg.connect(ac.destination);
-  click.start();
-  click.stop(t + 0.025);
-
-  const noise = ac.createBufferSource();
-  noise.buffer = noiseBuffer(ac, 0.07);
-  const bp = ac.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.setValueAtTime(1900, t);
-  bp.frequency.exponentialRampToValueAtTime(280, t + 0.09);
-  bp.Q.value = 2.4;
-  const ng = envGain(ac, 0.14, 0.003, 0.08);
-  noise.connect(bp);
-  bp.connect(ng);
-  ng.connect(ac.destination);
-  noise.start();
-  noise.stop(t + 0.1);
-
-  const osc = ac.createOscillator();
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(720, t);
-  osc.frequency.exponentialRampToValueAtTime(140, t + 0.11);
-  const lp = ac.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.setValueAtTime(2400, t);
-  lp.frequency.exponentialRampToValueAtTime(400, t + 0.1);
-  const og = envGain(ac, 0.055, 0.002, 0.1);
-  osc.connect(lp);
-  lp.connect(og);
-  og.connect(ac.destination);
-  osc.start();
-  osc.stop(t + 0.12);
+  playCue(ensureSfx().laser);
 }
 
 export function sfxError(): void {
@@ -141,83 +141,16 @@ export function sfxError(): void {
 }
 
 export function sfxBoom(hull: Hull | "fail" = "fighter"): void {
-  const ac = audioCtx();
-  const t = ac.currentTime;
-  const capital = hull === "capital";
-  const heavy = capital || hull === "dreadnought" || hull === "fail";
-  const dur = capital ? 1.35 : heavy ? 0.78 : 0.42;
-  const vol = capital ? 0.55 : heavy ? 0.4 : 0.26;
-
-  const sub = ac.createOscillator();
-  sub.type = "sine";
-  sub.frequency.setValueAtTime(capital ? 36 : heavy ? 48 : 68, t);
-  sub.frequency.exponentialRampToValueAtTime(22, t + dur * 0.7);
-  const sg = envGain(ac, vol * 0.85, 0.006, dur * 0.8);
-  sub.connect(sg);
-  sg.connect(ac.destination);
-  sub.start();
-  sub.stop(t + dur);
-
-  const body = ac.createOscillator();
-  body.type = "triangle";
-  body.frequency.setValueAtTime(capital ? 90 : 130, t);
-  body.frequency.exponentialRampToValueAtTime(40, t + dur * 0.45);
-  const bg = envGain(ac, vol * 0.35, 0.004, dur * 0.5);
-  body.connect(bg);
-  bg.connect(ac.destination);
-  body.start();
-  body.stop(t + dur * 0.55);
-
-  const src = ac.createBufferSource();
-  src.buffer = noiseBuffer(ac, dur);
-  const lp = ac.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.setValueAtTime(capital ? 1800 : heavy ? 1200 : 900, t);
-  lp.frequency.exponentialRampToValueAtTime(70, t + dur);
-  const ng = envGain(ac, vol, 0.004, dur);
-  src.connect(lp);
-  lp.connect(ng);
-  ng.connect(ac.destination);
-  src.start();
-
-  const grit = ac.createBufferSource();
-  grit.buffer = noiseBuffer(ac, 0.14);
-  const bp = ac.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.value = 900;
-  bp.Q.value = 0.8;
-  const gg = envGain(ac, vol * 0.45, 0.002, 0.12);
-  grit.connect(bp);
-  bp.connect(gg);
-  gg.connect(ac.destination);
-  grit.start();
-
-  if (heavy) {
-    const crack = ac.createBufferSource();
-    crack.buffer = noiseBuffer(ac, capital ? 0.28 : 0.16);
-    const hp = ac.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.value = 1600;
-    const cg = envGain(ac, capital ? 0.2 : 0.12, 0.002, capital ? 0.24 : 0.14);
-    crack.connect(hp);
-    hp.connect(cg);
-    cg.connect(ac.destination);
-    crack.start(t + 0.05);
+  const bank = ensureSfx();
+  if (hull === "capital") {
+    playCue(bank.large);
+    return;
   }
-
-  if (capital) {
-    const late = ac.createBufferSource();
-    late.buffer = noiseBuffer(ac, 0.35);
-    const llp = ac.createBiquadFilter();
-    llp.type = "lowpass";
-    llp.frequency.setValueAtTime(700, t + 0.22);
-    llp.frequency.exponentialRampToValueAtTime(80, t + 0.7);
-    const lg = envGain(ac, 0.22, 0.01, 0.45);
-    late.connect(llp);
-    llp.connect(lg);
-    lg.connect(ac.destination);
-    late.start(t + 0.2);
+  if (hull === "cruiser" || hull === "dreadnought" || hull === "fail") {
+    playCue(pickCue(bank.medium));
+    return;
   }
+  playCue(pickCue(bank.small));
 }
 
 export function sfxBreach(): void {
@@ -298,56 +231,7 @@ export function sfxSystem(): void {
 }
 
 export function sfxSalvo(): void {
-  const ac = audioCtx();
-  const t = ac.currentTime;
-
-  const charge = ac.createOscillator();
-  charge.type = "sawtooth";
-  charge.frequency.setValueAtTime(90, t);
-  charge.frequency.exponentialRampToValueAtTime(420, t + 0.16);
-  const clp = ac.createBiquadFilter();
-  clp.type = "lowpass";
-  clp.frequency.setValueAtTime(600, t);
-  clp.frequency.exponentialRampToValueAtTime(2400, t + 0.16);
-  const cg = envGain(ac, 0.08, 0.02, 0.16);
-  charge.connect(clp);
-  clp.connect(cg);
-  cg.connect(ac.destination);
-  charge.start();
-  charge.stop(t + 0.2);
-
-  const sub = ac.createOscillator();
-  sub.type = "sine";
-  sub.frequency.setValueAtTime(42, t + 0.14);
-  sub.frequency.exponentialRampToValueAtTime(20, t + 0.9);
-  const sg = envGain(ac, 0.5, 0.008, 0.72);
-  sub.connect(sg);
-  sg.connect(ac.destination);
-  sub.start(t + 0.14);
-  sub.stop(t + 0.95);
-
-  const body = ac.createBufferSource();
-  body.buffer = noiseBuffer(ac, 0.7);
-  const lp = ac.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.setValueAtTime(1600, t + 0.14);
-  lp.frequency.exponentialRampToValueAtTime(70, t + 0.8);
-  const bg = envGain(ac, 0.42, 0.006, 0.68);
-  body.connect(lp);
-  lp.connect(bg);
-  bg.connect(ac.destination);
-  body.start(t + 0.14);
-
-  const crack = ac.createBufferSource();
-  crack.buffer = noiseBuffer(ac, 0.22);
-  const hp = ac.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 1800;
-  const hg = envGain(ac, 0.18, 0.002, 0.18);
-  crack.connect(hp);
-  hp.connect(hg);
-  hg.connect(ac.destination);
-  crack.start(t + 0.16);
+  playCue(ensureSfx().tab);
 }
 
 export function sfxCannon(): void {
@@ -411,4 +295,6 @@ export function sfxPop(): void {
 
 export function unlockAudio(): void {
   audioCtx();
+  ensureSfx();
+  if (Howler.ctx?.state === "suspended") void Howler.ctx.resume();
 }
