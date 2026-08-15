@@ -3,7 +3,7 @@ import { gunshipWorldScale, isPhone, keyboardReserve } from "../systems/layout";
 import { reducedMotion } from "../systems/motion";
 import { addFleetLights, envMap, fbm, planetAtmosphere, planetMaterial } from "../vfx/forge";
 import { buildGargantua, type Gargantua } from "../vfx/gargantua";
-import { cloneHull, initFleet } from "./fleet";
+import { cloneHull, fleetPrototypes, initFleet } from "./fleet";
 import { FxRig } from "./fx";
 import { BLOOM_LAYER } from "./layers";
 import { createWorldRenderer, type WorldRenderer } from "./renderer";
@@ -137,7 +137,9 @@ export class Battlefield {
     this.planet.rotation.z = 0.34;
     this.scene.add(this.planet);
 
-    const halo = new THREE.Mesh(new THREE.IcosahedronGeometry(8.05, isPhone() ? 2 : 3), planetAtmosphere());
+    // The rim glow traces this silhouette, so too few subdivisions read as a
+    // visible polygon around the planet rather than a round halo.
+    const halo = new THREE.Mesh(new THREE.IcosahedronGeometry(8.05, isPhone() ? 3 : 4), planetAtmosphere());
     this.planet.add(halo);
 
     this.hole = buildGargantua();
@@ -181,6 +183,12 @@ export class Battlefield {
     this.scene.add(this.aegis);
 
     this.fx = new FxRig(this.scene);
+    this.fx.prime();
+    const warm = fleetPrototypes();
+    for (const g of warm) this.scene.add(g);
+    this.gfx.renderer.compile(this.scene, this.camera);
+    for (const g of warm) this.scene.remove(g);
+    this.fx.unprime();
     window.addEventListener("resize", this.onResize);
     this.fit();
   }
@@ -376,6 +384,11 @@ export class Battlefield {
   render(): void {
     this.gfx.renderer.toneMappingExposure = 1.12 + this.fx.exposureKick;
     this.hole.prerender(this.gfx.renderer, this.camera);
+    // The hole pass binds its own target and a black clear. Force the canvas
+    // back before bloom so a hitch cannot scan out a half-cleared buffer.
+    this.gfx.renderer.setRenderTarget(null);
+    this.gfx.renderer.setClearColor(0x120e0a, 1);
+    this.gfx.renderer.autoClear = true;
     this.gfx.render(this.scene, this.camera);
   }
 

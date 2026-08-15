@@ -40,6 +40,11 @@ export function initFleet(): void {
   });
 }
 
+export function fleetPrototypes(): THREE.Group[] {
+  initFleet();
+  return [...prototypes.values()].flat();
+}
+
 export function cloneHull(kind: FleetKind): THREE.Group {
   initFleet();
   const list = prototypes.get(kind);

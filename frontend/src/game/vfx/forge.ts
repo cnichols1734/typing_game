@@ -697,7 +697,10 @@ export function planetMaterial(): THREE.ShaderMaterial {
         col += cream * spec * 0.55;
         col += vec3(1.0, 0.62, 0.28) * fres * 0.22;
         col += albedo * 0.03;
-        gl_FragColor = vec4(col, 1.0);
+        // Kept under the tone mapper's shoulder. At full gain the lit face
+        // clipped to flat white, which threw away the band detail it is
+        // carrying and pushed a large area past the bloom threshold.
+        gl_FragColor = vec4(col * 0.74, 1.0);
       }
     `,
   });

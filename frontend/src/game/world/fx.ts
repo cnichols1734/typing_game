@@ -25,6 +25,7 @@ type Shard = {
 type Volume = { mesh: THREE.Mesh; life: number; max: number; grow: number };
 type Streak = { mesh: THREE.Mesh; vel: THREE.Vector3; life: number; max: number };
 type Lamp = { light: THREE.PointLight; life: number; max: number; peak: number };
+const LAMP_CAP = 4;
 
 const Y_UP = new THREE.Vector3(0, 1, 0);
 const _dir = new THREE.Vector3();
@@ -576,6 +577,12 @@ export class FxRig {
   private readonly volumes: Volume[] = [];
   private readonly streaks: Streak[] = [];
   private readonly lamps: Lamp[] = [];
+  private readonly lampPool: THREE.PointLight[] = [];
+  private lampCursor = 0;
+  private readonly dummy: THREE.Object3D[] = [];
+  private readonly ballMat: THREE.ShaderMaterial;
+  private readonly ballMatFail: THREE.ShaderMaterial;
+  private readonly shellShared: THREE.ShaderMaterial;
   private readonly beamGeo = new THREE.CylinderGeometry(0.05, 0.016, 1, 8, 1, true);
   private readonly beamMat = new THREE.MeshBasicMaterial({
     color: 0xffe2b8,
@@ -649,6 +656,34 @@ export class FxRig {
       premultipliedAlpha: true,
       alphaTest: 0.08,
     });
+    this.ballMat = fireballMat(1);
+    this.ballMatFail = fireballMat(0.45);
+    this.shellShared = shellMat();
+    // Fixed count so MeshStandardMaterials never recompile when a blast hits.
+    if (!isPhone() && !reducedMotion) {
+      for (let i = 0; i < LAMP_CAP; i++) {
+        const light = new THREE.PointLight(0xffd4a0, 0, 12, 2);
+        this.scene.add(light);
+        this.lampPool.push(light);
+      }
+    }
+  }
+
+  /** Park compiled blast programs in the scene so the first boom is not a hitch. */
+  prime(): void {
+    const ball = new THREE.Mesh(this.ballGeo, this.ballMat);
+    const fail = new THREE.Mesh(this.ballGeo, this.ballMatFail);
+    const shell = new THREE.Mesh(this.shellGeo, this.shellShared);
+    for (const mesh of [ball, fail, shell]) {
+      mesh.frustumCulled = false;
+      this.scene.add(mesh);
+      this.dummy.push(mesh);
+    }
+  }
+
+  unprime(): void {
+    for (const mesh of this.dummy) this.scene.remove(mesh);
+    this.dummy.length = 0;
   }
 
   wound(parent: THREE.Object3D, look?: Partial<WoundLook>): WoundEmitter {
@@ -746,7 +781,7 @@ export class FxRig {
       const u = Math.max(0, L.life / L.max);
       L.light.intensity = L.peak * u * u;
       if (L.life <= 0) {
-        this.scene.remove(L.light);
+        L.light.intensity = 0;
         this.lamps.splice(i, 1);
       }
     }
@@ -890,7 +925,7 @@ export class FxRig {
       this.scene.remove(s.mesh);
       (s.mesh.material as THREE.Material).dispose();
     }
-    for (const L of this.lamps) this.scene.remove(L.light);
+    for (const L of this.lampPool) L.intensity = 0;
     this.lasers.length = 0;
     this.sprites.length = 0;
     this.clouds.length = 0;
@@ -922,7 +957,7 @@ export class FxRig {
   }
 
   private spawnBall(at: THREE.Vector3, start: number, life: number, grow: number, hot: number): void {
-    const mesh = new THREE.Mesh(this.ballGeo, fireballMat(hot));
+    const mesh = new THREE.Mesh(this.ballGeo, (hot < 0.7 ? this.ballMatFail : this.ballMat).clone());
     mesh.position.copy(at);
     mesh.scale.setScalar(start);
     mesh.layers.enable(BLOOM_LAYER);
@@ -931,7 +966,7 @@ export class FxRig {
   }
 
   private spawnShell(at: THREE.Vector3, start: number, life: number, grow: number): void {
-    const mesh = new THREE.Mesh(this.shellGeo, shellMat());
+    const mesh = new THREE.Mesh(this.shellGeo, this.shellShared.clone());
     mesh.position.copy(at);
     mesh.scale.setScalar(start);
     mesh.layers.enable(BLOOM_LAYER);
@@ -971,14 +1006,14 @@ export class FxRig {
   }
 
   private lamp(at: THREE.Vector3, peak: number, distance: number, life: number): void {
-    if (isPhone() || reducedMotion) return;
-    if (this.lamps.length >= 4) {
-      const old = this.lamps.shift()!;
-      this.scene.remove(old.light);
+    if (isPhone() || reducedMotion || !this.lampPool.length) return;
+    const light = this.lampPool[this.lampCursor++ % this.lampPool.length]!;
+    for (let i = this.lamps.length - 1; i >= 0; i--) {
+      if (this.lamps[i]!.light === light) this.lamps.splice(i, 1);
     }
-    const light = new THREE.PointLight(0xffd4a0, peak, distance, 2);
     light.position.copy(at);
-    this.scene.add(light);
+    light.distance = distance;
+    light.intensity = peak;
     this.lamps.push({ light, life, max: life, peak });
   }
 
