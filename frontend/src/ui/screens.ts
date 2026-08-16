@@ -95,22 +95,16 @@ export function mountShell(app: GameApp): void {
   loadMenuBoards();
 
   musicBtn.textContent = isMusicOn() ? "Music on" : "Music off";
-  const beginTheme = () => {
-    unlockAudio();
-    if (isMusicOn()) setBed();
-  };
-  window.addEventListener("pointerdown", beginTheme, { once: true });
-  window.addEventListener("keydown", beginTheme, { once: true });
 
   musicBtn.addEventListener("click", () => {
-    unlockAudio();
+    void unlockAudio();
     setMusicOn(!isMusicOn());
     musicBtn.textContent = isMusicOn() ? "Music on" : "Music off";
     sfxUi();
   });
 
   const start = () => {
-    unlockAudio();
+    void unlockAudio();
     setBed();
     sfxUi();
     show(menu, false);
