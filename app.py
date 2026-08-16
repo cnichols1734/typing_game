@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import Flask, g, jsonify, request, send_from_directory
 
-from db import USING_PG, connect, init_schema, insert_score
+from db import USING_PG, connect, ensure_schema, insert_score
 
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "frontend" / "dist"
@@ -81,16 +81,9 @@ def get_db():
     return g.db
 
 
-def init_db() -> None:
-    init_schema(get_db())
-
-
 def create_app() -> Flask:
+    ensure_schema()
     app = Flask(__name__, static_folder=None)
-
-    @app.before_request
-    def _ready() -> None:
-        init_db()
 
     @app.teardown_appcontext
     def _close(_err: object) -> None:
