@@ -1,3 +1,4 @@
+import { unlockAudio } from "../game/audio/audio";
 import { isPhone, syncChrome } from "../game/systems/layout";
 
 const ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -92,6 +93,7 @@ function releasePointer(): void {
 function onDown(e: PointerEvent): void {
   if (!root || pointerId !== null) return;
   if (e.pointerType === "mouse" && e.button !== 0) return;
+  void unlockAudio();
   e.preventDefault();
   e.stopPropagation();
   pointerId = e.pointerId;
