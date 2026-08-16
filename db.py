@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -11,6 +12,10 @@ DB_PATH = INSTANCE / "aphelion.db"
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 USING_PG = DATABASE_URL.startswith("postgres")
+SCHEMA_LOCK_KEY = 728401
+
+_schema_lock = threading.Lock()
+_schema_ready = False
 
 
 def _sql(query: str) -> str:
@@ -62,8 +67,24 @@ def connect() -> Connection:
     return Connection(raw)
 
 
+def ensure_schema() -> None:
+    global _schema_ready
+    if _schema_ready:
+        return
+    with _schema_lock:
+        if _schema_ready:
+            return
+        db = connect()
+        try:
+            init_schema(db)
+            _schema_ready = True
+        finally:
+            db.close()
+
+
 def init_schema(db: Connection) -> None:
     if USING_PG:
+        db.execute("SELECT pg_advisory_xact_lock(?)", (SCHEMA_LOCK_KEY,))
         db.execute(
             """
             CREATE TABLE IF NOT EXISTS scores (
@@ -139,10 +160,21 @@ def init_schema(db: Connection) -> None:
 
 def _ensure_platform_column(db: Connection) -> None:
     if USING_PG:
+        row = db.execute(
+            """
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'scores'
+              AND column_name = 'platform'
+            """
+        ).fetchone()
+        if row:
+            return
         db.execute(
             """
             ALTER TABLE scores
-            ADD COLUMN IF NOT EXISTS platform TEXT NOT NULL DEFAULT 'desktop'
+            ADD COLUMN platform TEXT NOT NULL DEFAULT 'desktop'
             """
         )
         return

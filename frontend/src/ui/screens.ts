@@ -51,12 +51,20 @@ function renderBoard(list: HTMLElement, rows: ScoreRow[]): void {
   });
 }
 
+function renderBoardError(list: HTMLElement): void {
+  list.replaceChildren();
+  const empty = document.createElement("li");
+  empty.className = "empty";
+  empty.textContent = "Couldn't load scores.";
+  list.appendChild(empty);
+}
+
 async function loadBoard(period: ScorePeriod, target: HTMLElement): Promise<void> {
   try {
     const { scores } = await fetchScores(period);
     renderBoard(target, scores);
   } catch {
-    renderBoard(target, []);
+    renderBoardError(target);
   }
 }
 
